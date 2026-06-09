@@ -1,0 +1,691 @@
+<!-- 제작자: bamnamoo@gmail.com -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학교회계 집행현황 통합 대시보드</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --tab-active: #4f46e5;
+            --excel-header-bg: #000000;
+            --excel-header-text: #ffffff;
+        }
+        body.light-mode {
+            --bg: #f1f5f9;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+            --excel-header-bg: #f8fafc;
+            --excel-header-text: #0f172a;
+        }
+        body { font-family: 'Outfit', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; overflow-x: hidden; }
+        .container { width: 100%; max-width: 100%; margin: 0; padding: 0.8rem; box-sizing: border-box; }
+        header { position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 0.8rem; }
+        h1 { background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; font-size: 1.3rem; font-weight: 800; }
+        .creator-info { font-size: 0.7rem; color: #94a3b8; margin-left: 0.5rem; white-space: nowrap; }
+        .light-mode .creator-info { color: #64748b; }
+        .upload-section { display: grid; grid-template-columns: 1fr 1fr 200px; gap: 0.8rem; margin-bottom: 0.8rem; }
+        .upload-box { 
+            background: rgba(30, 41, 59, 0.5); 
+            border: 2px dashed rgba(255,255,255,0.1); border-radius: 12px;
+            padding: 0.8rem; cursor: pointer; transition: all 0.2s;
+            display: flex; flex-direction: column; justify-content: center; gap: 0.3rem;
+            position: relative;
+        }
+        .upload-box.drag-active {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+            transform: scale(1.01);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+        }
+        .upload-box:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+        .upload-box.done { border-color: var(--success); border-style: solid; }
+        .upload-guide { 
+            font-size: 1.0rem; color: #e2e8f0; line-height: 1.6; 
+            background: rgba(0,0,0,0.25); padding: 0.8rem 1rem; border-radius: 0.5rem;
+            width: 100%; text-align: center; pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .box-sub { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 0.4rem; }
+        .header-tools { flex: 2; display: flex; flex-direction: column; gap: 0.6rem; justify-content: center; min-width: 200px; }
+        .tool-row { display: flex; gap: 0.5rem; align-items: center; width: 100%; }
+        .tool-row .toggle-btn { flex: 1; white-space: nowrap; font-size: 0.8rem; padding: 0.6rem; justify-content: center; height: 38px; box-sizing: border-box; }
+        .header-tools input[type="text"] { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.6rem; border-radius: 0.4rem; font-size: 0.8rem; height: 38px; box-sizing: border-box; min-width: 0; }
+        
+        .tab-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
+        .tabs { display: flex; gap: 0.4rem; background: rgba(0,0,0,0.2); padding: 0.25rem; border-radius: 0.5rem; width: fit-content; }
+        .tab { padding: 0.4rem 0.8rem; border-radius: 0.3rem; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: 0.2s; color: var(--text-muted); }
+        .tab.active { background: var(--tab-active); color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); }
+        
+        .toggle-btn { 
+            background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); 
+            padding: 0.4rem 0.8rem; border-radius: 0.4rem; font-size: 0.75rem; font-weight: 600; 
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px;
+        }
+        .toggle-btn:hover { border-color: var(--primary); color: white; }
+        .toggle-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+        body.light-mode .toggle-btn { background: #ffffff; color: #475569; }
+        body.light-mode .toggle-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+        body.light-mode .upload-box { background: #ffffff; }
+        body.light-mode .upload-guide { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; }
+        body.light-mode .upload-guide strong { color: #c2410c; }
+        body.light-mode .path-arrow { color: #6366f1; }
+        body.light-mode h1 { background: linear-gradient(to right, #4f46e5, #7c3aed); -webkit-background-clip: text; }
+        
+        .content-card { background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; overflow: hidden; width: 100%; }
+        body:not(.light-mode) .content-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
+        .table-wrapper { overflow: auto; max-height: 72vh; position: relative; width: 100%; }
+        table { border-collapse: collapse; font-size: 1.0rem; table-layout: fixed; width: 100%; min-width: 100%; background: var(--surface); }
+        
+        .excel-header th { 
+            background: var(--excel-header-bg) !important; color: var(--excel-header-text) !important; 
+            padding: 0.6rem 0.3rem; text-align: center; border: 1px solid #333; 
+            position: sticky !important; top: 0 !important; z-index: 100; font-weight: 600; cursor: pointer; user-select: none;
+            white-space: nowrap; font-size: 0.85rem;
+            position: relative;
+        }
+        .header-content { display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .filter-btn { 
+            color: #888; font-size: 12px; cursor: pointer; padding: 1px 3px; border-radius: 3px; 
+            background: rgba(255,255,255,0.05); border: 1px solid transparent; transition: 0.2s;
+            line-height: 1; display: inline-flex; align-items: center;
+        }
+        .filter-btn:hover { background: #333; color: white; border-color: #555; }
+        .filter-btn.active { color: var(--success); border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
+
+        .filter-menu { 
+            position: absolute; top: 100%; left: 0; background: var(--surface); 
+            border: 1px solid var(--border); border-radius: 8px; padding: 10px; z-index: 1000; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); min-width: 180px; max-height: 400px; overflow-y: auto; text-align: left;
+        }
+        .date-mode-toggle {
+            display: flex; gap: 4px; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 6px; margin-bottom: 8px;
+        }
+        .date-mode-toggle button {
+            flex: 1; padding: 4px 0; border-radius: 4px; font-size: 0.75rem; background: transparent; 
+            color: var(--text-muted); border: none; cursor: pointer; transition: 0.2s;
+        }
+        .date-mode-toggle button.active {
+            background: var(--primary); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .filter-item { display: flex; align-items: center; gap: 8px; padding: 6px 4px; font-size: 0.7rem; cursor: pointer; border-radius: 4px; transition: 0.15s; }
+        .filter-item:hover { background: #334155; }
+
+        td { padding: 0.5rem 0.6rem; border: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.9; }
+        tr:hover td { background: rgba(255,255,255,0.04); }
+        body.light-mode tr:hover td { background: rgba(0,0,0,0.03); }
+        
+        .total-detail { 
+            background: linear-gradient(90deg, rgba(79, 70, 229, 0.4), rgba(124, 58, 237, 0.25)) !important; 
+            font-weight: 700; color: #ffffff; 
+            border-top: 2px solid rgba(139, 92, 246, 0.4);
+            border-bottom: 2px solid rgba(139, 92, 246, 0.4);
+        }
+        body.light-mode .total-detail {
+            background: linear-gradient(90deg, #dbeafe, #e0e7ff) !important;
+            color: #1e40af;
+            border-top: 2px solid #93c5fd;
+            border-bottom: 2px solid #93c5fd;
+        }
+        
+        .grand-total { 
+            background: var(--surface) !important; font-weight: 700; color: var(--success); 
+            border-top: 2px solid var(--success); position: sticky; bottom: 0; z-index: 50;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+        }
+        body.light-mode .grand-total { background: #f8fafc !important; }
+        footer { margin-top: 1.5rem; padding: 1rem; text-align: center; font-size: 0.75rem; color: var(--text-muted); opacity: 0.8; border-top: 1px solid var(--border); }
+        .num-cell { text-align: right; font-family: 'Consolas', monospace; }
+        .center-cell { text-align: center; }
+        .percent-cell { text-align: center; font-weight: 600; }
+        .negative-val { color: #000000 !important; font-weight: 800 !important; background: #fbbf24 !important; }
+        body.light-mode .negative-val { color: #000000 !important; background: #fbbf24 !important; }
+        
+        .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 5px; cursor: col-resize; z-index: 110; }
+        .sort-icon { font-size: 9px; color: var(--primary); opacity: 0.7; }
+        .col-manager-modal { position: absolute; right: 10px; top: 150px; background: var(--surface); border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; width: 300px; }
+        .col-manager-modal label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; cursor: pointer; padding: 0.3rem; border-radius: 0.3rem; transition: 0.2s; }
+        .col-manager-modal label:hover { background: rgba(255,255,255,0.05); }
+        body.light-mode .col-manager-modal label:hover { background: rgba(0,0,0,0.03); }
+        .col-manager-modal input { cursor: pointer; }
+        .edit-input { width: 100%; border: none; background: transparent; color: inherit; text-align: right; font-family: inherit; font-size: 0.85rem; padding: 2px 4px; border-radius: 4px; }
+        .edit-input:focus { background: rgba(255,255,255,0.1); outline: 1px solid var(--primary); }
+        .edit-input::placeholder { color: var(--text-muted); opacity: 0.5; }
+        
+        /* 추경 컬럼 시인성 개선: 입력 시 흰색 배경 */
+        .supp-cell { background: rgba(255, 255, 255, 0.03) !important; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); }
+        .supp-positive { color: #d32f2f !important; background: #ffffff !important; font-weight: 800; }
+        .supp-negative { color: #1976d2 !important; background: #ffffff !important; font-weight: 800; }
+        
+        body.light-mode .supp-cell { background: #f8fafc !important; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
+        
+        .edit-input { background: transparent !important; color: inherit !important; font-weight: inherit !important; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useRef, useEffect } = React;
+
+        const formatDate = (val) => {
+            if (!val) return '';
+            if (typeof val === 'number') {
+                const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+                return date.toISOString().split('T')[0];
+            }
+            if (typeof val === 'string') {
+                if (val.includes('T')) return val.split('T')[0];
+                if (/^\d{8}$/.test(val)) return `${val.substring(0,4)}-${val.substring(4,6)}-${val.substring(6,8)}`;
+            }
+            return String(val);
+        };
+
+        const TableRow = React.memo(({ row: r, activeCols, activeTab, onUpdateBudget }) => {
+            return (
+                <tr className={r._totalType ? `total-${r._totalType}` : ''}>
+                    {activeCols.map(col => {
+                        const val = r[col.key];
+                        const numVal = Number(val);
+                        const isNegative = (col.isNum || col.isRate) && numVal < 0;
+                        const isEditable = activeTab === 'supplement' && col.key === '추경' && !r._totalType;
+                        
+                        const isSuppCol = col.key === '추경';
+                        let specialClass = isSuppCol ? 'supp-cell' : '';
+                        if (isSuppCol && numVal > 0) specialClass += ' supp-positive';
+                        else if (isSuppCol && numVal < 0) specialClass += ' supp-negative';
+
+                        return (
+                            <td key={col.key} className={`${col.isNum ? 'num-cell' : col.isRate ? 'percent-cell' : 'center-cell'} ${isNegative && !isSuppCol ? 'negative-val' : ''} ${specialClass}`}>
+                                {isEditable ? (
+                                    <input 
+                                        type="text" 
+                                        className={`edit-input ${specialClass}`}
+                                        value={val || ''}
+                                        placeholder="0"
+                                        onChange={(e) => {
+                                            const raw = e.target.value.replace(/[^0-9.-]/g, '');
+                                            onUpdateBudget('추경', raw);
+                                        }}
+                                    />
+                                ) : (
+                                    col.isNum ? new Intl.NumberFormat().format(numVal || 0) : 
+                                    col.isRate ? (val || '0.0') + '%' : 
+                                    (col.key === '_exclude' ? (r._exclude || r['정산재원'] || '') : 
+                                    (col.key === '_costItem' ? r._costItem : r[col.key]))
+                                )}
+                            </td>
+                        );
+                    })}
+                </tr>
+            );
+        });
+
+        function App() {
+            const [budgetData, setBudgetData] = useState([]);
+            const [expenseData, setExpenseData] = useState([]);
+            const [activeTab, setActiveTab] = useState('detail');
+            const [search, setSearch] = useState('');
+            const [sortConfig, setSortConfig] = useState({ key: '', direction: 'asc' });
+            const [activeFilterCol, setActiveFilterCol] = useState(null);
+            const [columnFilters, setColumnFilters] = useState({});
+            const [showManager, setShowManager] = useState(false);
+            const [isLightMode, setIsLightMode] = useState(true);
+            const [dragOverBox, setDragOverBox] = useState(null);
+            const [dateMode, setDateMode] = useState('month'); // 'month' or 'day'
+            const [hiddenCols, setHiddenCols] = useState({ 
+                detail: { policy: true, unit: true, manager: true, supplement: true },
+                supplement: { policy: true, unit: true, manager: true, rate: true },
+                expense: {}
+            });
+            const filterRef = useRef(null);
+            const managerRef = useRef(null);
+
+            useEffect(() => {
+                if (isLightMode) document.body.classList.add('light-mode');
+                else document.body.classList.remove('light-mode');
+            }, [isLightMode]);
+
+            const [detailColWidths, setDetailColWidths] = useState({ 
+                policy: 110, unit: 120, project: 150, item: 130, desc: 220, cost: 130, 
+                a: 110, b: 110, ab: 140, c: 110, ac: 140, supplement: 100, rate: 80, exclude: 90, manager: 120 
+            });
+            const [expenseColWidths, setExpenseColWidths] = useState({ 
+                proj: 200, item: 200, category: 150, date: 120, title: 800, payee: 150, amount: 120 
+            });
+
+            useEffect(() => {
+                const handleClickOutside = (event) => {
+                    if (filterRef.current && !filterRef.current.contains(event.target)) setActiveFilterCol(null);
+                    if (managerRef.current && !managerRef.current.contains(event.target) && !event.target.closest('.manager-toggle')) setShowManager(false);
+                };
+                document.addEventListener('mousedown', handleClickOutside);
+                return () => document.removeEventListener('mousedown', handleClickOutside);
+            }, []);
+
+            const updateBudgetValue = (id, key, val) => {
+                setBudgetData(prev => prev.map(r => r._id === id ? { ...r, [key]: val } : r));
+            };
+
+            const exportSupplementExcel = () => {
+                if (!budgetData.length) return alert('저장할 데이터가 없습니다.');
+                const dataToExport = displayData.map(r => {
+                    const obj = {};
+                    activeCols.forEach(col => {
+                        let val = r[col.key];
+                        if (col.isNum) val = Number(val) || 0;
+                        obj[col.label] = val;
+                    });
+                    return obj;
+                });
+                const ws = XLSX.utils.json_to_sheet(dataToExport);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "추경현황");
+                XLSX.writeFile(wb, `학교회계_추경현황_${new Date().toISOString().slice(0,10)}.xlsx`);
+            };
+
+            const processBudgetFile = (file) => {
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const wb = XLSX.read(evt.target.result, { type: 'binary' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                    let headerIdx = rows.findIndex(r => r.includes('정책사업') || r.includes('단위사업'));
+                    if (headerIdx === -1) headerIdx = 0;
+                    
+                    const json = XLSX.utils.sheet_to_json(ws, { range: headerIdx });
+                    const filtered = json.filter(r => {
+                        const isTotalRow = Object.values(r).some(v => {
+                            const s = String(v || '').replace(/\s/g, '');
+                            return /합계|소계|누계|전기계|\[.*계.*\]|\[.*소.*\]/.test(s);
+                        });
+                        if (isTotalRow) return false;
+                        return (r['정책사업'] || r['단위사업'] || r['세부사업']);
+                    }).map((r, idx) => {
+                        const a = Number(r['예산현액 (A)'] || r['예산현액(A)'] || r['예산현액'] || 0);
+                        const b = Number(r['원인행위액 (B)'] || r['원인행위액(B)'] || r['원인행위액'] || 0);
+                        const c = Number(r['지출액 (C)'] || r['지출액(C)'] || r['지출액'] || 0);
+                        return {
+                            ...r, _id: idx,
+                            _a: a, _b: b, _ab: a - b, _c: c, _ac: a - c,
+                            _rate: a > 0 ? ((a - b) / a * 100).toFixed(1) : '0.0',
+                            _exclude: Number(r['정산재원'] || r['결산제외'] || 0),
+                            _costItem: r['원가통계비목'] || r['원가비목'] || r['원가통계'] || '',
+                            _totalType: ''
+                        };
+                    });
+                    setBudgetData(filtered);
+                    setActiveTab('detail');
+                };
+                reader.readAsBinaryString(file);
+            };
+
+            const processExpenseFile = (file) => {
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const wb = XLSX.read(evt.target.result, { type: 'binary' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                    let headerIdx = rows.findIndex(r => 
+                        r.some(v => String(v).includes('지출일자') || String(v).includes('세부사업명') || String(v).includes('채주'))
+                    );
+                    if (headerIdx === -1) headerIdx = 0;
+                    const json = XLSX.utils.sheet_to_json(ws, { range: headerIdx });
+                    const filteredJson = json.filter(r => {
+                        const isTotal = Object.values(r).some(v => {
+                            const s = String(v || '').replace(/\s/g, '');
+                            return /합계|소계|누계|전기계|기간계|월계|\[.*계.*\]/.test(s);
+                        });
+                        if (isTotal) return false;
+                        const amt = Number(r['지출액'] || r['지급액'] || r['금액'] || r['지출액(C)'] || 0);
+                        return amt !== 0;
+                    });
+                    setExpenseData(filteredJson.map(r => ({
+                        ...r,
+                        _amt: Number(r['지출액'] || r['지급액'] || r['금액'] || r['지출액(C)'] || 0),
+                        _date: formatDate(r['지출일자'] || r['일자'] || r['지출일'])
+                    })));
+                    setActiveTab('expense');
+                };
+                reader.readAsBinaryString(file);
+            };
+
+            const filteredData = useMemo(() => {
+                const source = activeTab === 'expense' ? expenseData : budgetData;
+                let items = source.filter(d => {
+                    const searchMatch = Object.values(d).some(v => String(v).toLowerCase().includes(search.toLowerCase()));
+                    if (!searchMatch) return false;
+                    for (let colKey in columnFilters) {
+                        const allowed = columnFilters[colKey];
+                        if (allowed && allowed.length > 0) {
+                            let val = (d[colKey] === undefined || d[colKey] === null) ? '' : String(d[colKey]);
+                            if (colKey === '_date') {
+                                val = dateMode === 'month' ? val.substring(0, 7) : val;
+                            }
+                            if (!allowed.includes(val)) return false;
+                        }
+                    }
+                    return true;
+                });
+                if (sortConfig.key) {
+                    items.sort((a, b) => {
+                        let aVal = a[sortConfig.key];
+                        let bVal = b[sortConfig.key];
+                        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+                        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                }
+                return items;
+            }, [activeTab, budgetData, expenseData, search, sortConfig, columnFilters]);
+
+            const displayData = useMemo(() => {
+                if ((activeTab !== 'detail' && activeTab !== 'supplement') || filteredData.length === 0) return filteredData;
+                const result = [];
+                let currentGroup = filteredData[0]['세부사업'];
+                let groupRows = [];
+                const addTotalRow = (name, rows) => {
+                    if (rows.length === 0) return;
+                    const sumA = rows.reduce((s, r) => s + (r._a || 0), 0);
+                    const sumB = rows.reduce((s, r) => s + (r._b || 0), 0);
+                    const sumC = rows.reduce((s, r) => s + (r._c || 0), 0);
+                    const sumExclude = rows.reduce((s, r) => s + (Number(r._exclude) || 0), 0);
+                    const sumSupp = rows.reduce((s, r) => s + (Number(r['추경']) || 0), 0);
+                    result.push({
+                        '세부사업': `${name} 합계`,
+                        _a: sumA, _b: sumB, _ab: sumA - sumB, _c: sumC, _ac: sumA - sumC,
+                        추경: sumSupp, _exclude: sumExclude,
+                        _rate: sumA > 0 ? ((sumA - sumB) / sumA * 100).toFixed(1) : '0.0',
+                        _totalType: 'detail'
+                    });
+                };
+                filteredData.forEach(row => {
+                    if (row['세부사업'] !== currentGroup) { addTotalRow(currentGroup, groupRows); currentGroup = row['세부사업']; groupRows = []; }
+                    result.push(row); groupRows.push(row);
+                });
+                addTotalRow(currentGroup, groupRows);
+                return result;
+            }, [filteredData, activeTab]);
+
+            const totals = useMemo(() => {
+                if (activeTab === 'expense') return { expense: filteredData.reduce((acc, cur) => acc + cur._amt, 0) };
+                const baseData = filteredData.filter(d => !d._totalType);
+                return {
+                    a: baseData.reduce((acc, cur) => acc + cur._a, 0),
+                    b: baseData.reduce((acc, cur) => acc + cur._b, 0),
+                    ab: baseData.reduce((acc, cur) => acc + cur._ab, 0),
+                    c: baseData.reduce((acc, cur) => acc + cur._c, 0),
+                    ac: baseData.reduce((acc, cur) => acc + cur._ac, 0),
+                    supp: baseData.reduce((acc, cur) => acc + (Number(cur['추경']) || 0), 0),
+                    exclude: baseData.reduce((acc, cur) => acc + (Number(cur._exclude) || 0), 0)
+                };
+            }, [filteredData, activeTab]);
+
+            const renderFilterMenu = (colKey, data) => {
+                if (activeFilterCol !== colKey) return null;
+                let allValues = [...new Set(data.map(d => (d[colKey] === undefined || d[colKey] === null) ? '' : String(d[colKey])))].sort();
+                if (colKey === '_date') {
+                    if (dateMode === 'month') {
+                        allValues = [...new Set(allValues.map(v => v.substring(0, 7)))].sort();
+                    }
+                }
+                const selected = columnFilters[colKey] || [];
+                return (
+                    <div className="filter-menu" ref={filterRef} onClick={e => e.stopPropagation()}>
+                        {colKey === '_date' && (
+                            <div className="date-mode-toggle">
+                                <button className={dateMode === 'month' ? 'active' : ''} onClick={() => { setDateMode('month'); setColumnFilters(p => ({...p, [colKey]: []})); }}>월별</button>
+                                <button className={dateMode === 'day' ? 'active' : ''} onClick={() => { setDateMode('day'); setColumnFilters(p => ({...p, [colKey]: []})); }}>일별</button>
+                            </div>
+                        )}
+                        <div className="filter-item" onClick={() => setColumnFilters(prev => ({...prev, [colKey]: selected.length === allValues.length ? [] : allValues}))}>
+                            <input type="checkbox" checked={selected.length === allValues.length} readOnly />
+                            <strong>(전체 선택)</strong>
+                        </div>
+                        <hr style={{borderColor: '#475569', margin: '6px 0'}} />
+                        {allValues.map(v => (
+                            <div key={v} className="filter-item" onClick={() => setColumnFilters(prev => ({...prev, [colKey]: prev[colKey]?.includes(v) ? prev[colKey].filter(x => x !== v) : [...(prev[colKey] || []), v]}))}>
+                                <input type="checkbox" checked={selected.includes(v)} readOnly />
+                                <span>{v || '(공백)'}</span>
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+
+            const startResize = (e, colKey, isExpense) => {
+                e.stopPropagation();
+                const startX = e.pageX;
+                const startWidth = isExpense ? expenseColWidths[colKey] : detailColWidths[colKey];
+                const onMouseMove = (moveE) => {
+                    const newWidth = Math.max(40, startWidth + (moveE.pageX - startX));
+                    if (isExpense) setExpenseColWidths(prev => ({ ...prev, [colKey]: newWidth }));
+                    else setDetailColWidths(prev => ({ ...prev, [colKey]: newWidth }));
+                };
+                const onMouseUp = () => { document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); };
+                document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp);
+            };
+
+            const Arrow = () => <span className="path-arrow"> &gt; </span>;
+
+            const detailCols = [
+                {label:'정책사업', key:'정책사업', wk:'policy'}, {label:'단위사업', key:'단위사업', wk:'unit'},
+                {label:'세부사업', key:'세부사업', wk:'project'}, {label:'세부항목', key:'세부항목', wk:'item'},
+                {label:'산출내역', key:'산출내역', wk:'desc'}, {label:'원가통계비목', key:'_costItem', wk:'cost'},
+                {label:'예산현액 (A)', key:'_a', wk:'a', isNum:true}, {label:'원인행위액 (B)', key:'_b', wk:'b', isNum:true},
+                {label:'원인행위잔액 (A-B)', key:'_ab', wk:'ab', isNum:true}, {label:'지출액 (C)', key:'_c', wk:'c', isNum:true},
+                {label:'지출잔액 (A-C)', key:'_ac', wk:'ac', isNum:true}, 
+                {label:'추경', key:'추경', wk:'supplement', isNum:true},
+                {label:'불용율', key:'_rate', wk:'rate', isRate:true},
+                {label:'정산재원', key:'_exclude', wk:'exclude', isNum:true}, {label:'세부항목담당자', key:'세부항목담당자', wk:'manager'}
+            ];
+
+            const expenseCols = [
+                {label:'세부사업명', key:'세부사업명', wk:'proj'}, {label:'세부항목명', key:'세부항목명', wk:'item'},
+                {label:'원가비목', key:'원가비목', wk:'category'}, {label:'지출일자', key:'_date', wk:'date'},
+                {label:'제목', key:'제목', wk:'title'}, {label:'채주', key:'채주', wk:'payee'},
+                {label:'지출액', key:'_amt', wk:'amount', isNum:true}
+            ];
+
+            const activeCols = useMemo(() => {
+                const cols = activeTab === 'expense' ? expenseCols : detailCols;
+                const tabHidden = hiddenCols[activeTab] || {};
+                return cols.filter(c => !tabHidden[c.wk]);
+            }, [activeTab, hiddenCols]);
+
+            return (
+                <div className="container">
+                    <header>
+                        <h1>2026 학교회계 통합 대시보드</h1>
+                        <span className="creator-info">제작자: bamnamoo@gmail.com</span>
+                    </header>
+
+                    <div className="upload-section">
+                        <div 
+                            className={`upload-box ${budgetData.length ? 'done' : ''} ${dragOverBox === 'budget' ? 'drag-active' : ''}`} 
+                            onClick={() => document.getElementById('budget-file').click()}
+                            onDragOver={(e) => { e.preventDefault(); setDragOverBox('budget'); }}
+                            onDragLeave={() => setDragOverBox(null)}
+                            onDrop={(e) => { e.preventDefault(); setDragOverBox(null); if (e.dataTransfer.files[0]) processBudgetFile(e.dataTransfer.files[0]); }}
+                        >
+                            <div className="upload-guide">
+                                📂 <strong>사업관리카드(현액)</strong><br/>
+                                <span className="box-sub">{budgetData.length ? `✅ ${budgetData.filter(d=>!d._totalType).length}건` : '클릭 또는 파일 드래그'}</span>
+                            </div>
+                            <input type="file" id="budget-file" hidden onChange={e => processBudgetFile(e.target.files[0])} accept=".xlsx, .xls" />
+                        </div>
+                        <div 
+                            className={`upload-box ${expenseData.length ? 'done' : ''} ${dragOverBox === 'expense' ? 'drag-active' : ''}`} 
+                            onClick={() => document.getElementById('expense-file').click()}
+                            onDragOver={(e) => { e.preventDefault(); setDragOverBox('expense'); }}
+                            onDragLeave={() => setDragOverBox(null)}
+                            onDrop={(e) => { e.preventDefault(); setDragOverBox(null); if (e.dataTransfer.files[0]) processExpenseFile(e.dataTransfer.files[0]); }}
+                        >
+                            <div className="upload-guide">
+                                📂 <strong>현금출납부</strong><br/>
+                                <span className="box-sub">{expenseData.length ? `✅ ${expenseData.length}건` : '클릭 또는 파일 드래그'}</span>
+                            </div>
+                            <input type="file" id="expense-file" hidden onChange={e => processExpenseFile(e.target.files[0])} accept=".xlsx, .xls" />
+                        </div>
+
+                        <div className="header-tools">
+                            <button className="toggle-btn" onClick={() => setShowManager(!showManager)}>⚙️ 컬럼 설정</button>
+                            <button className="toggle-btn" onClick={() => setIsLightMode(!isLightMode)}>{isLightMode ? '🌙 다크 모드' : '☀️ 화이트 모드'}</button>
+                            <input type="text" placeholder="🔍 검색..." value={search} onChange={e => setSearch(e.target.value)} />
+                            <button className="toggle-btn" 
+                                onClick={exportSupplementExcel} 
+                                disabled={activeTab !== 'supplement'}
+                                style={{
+                                    background: activeTab === 'supplement' ? 'var(--success)' : 'rgba(255,255,255,0.05)', 
+                                    color: activeTab === 'supplement' ? 'white' : 'var(--text-muted)', 
+                                    border: '1px solid var(--border)',
+                                    opacity: activeTab === 'supplement' ? 1 : 0.5
+                                }}
+                            >
+                                📥 추경 엑셀 저장
+                            </button>
+                        </div>
+                    </div>
+                        
+                        {showManager && (
+                            <div className="col-manager-modal" ref={managerRef}>
+                                {(activeTab === 'expense' ? expenseCols : detailCols).map(col => (
+                                    <label key={col.wk}>
+                                        <input type="checkbox" 
+                                            checked={!(hiddenCols[activeTab] || {})[col.wk]} 
+                                            onChange={() => setHiddenCols(prev => ({
+                                                ...prev,
+                                                [activeTab]: { ...prev[activeTab], [col.wk]: !prev[activeTab][col.wk] }
+                                            }))} 
+                                        />
+                                        {col.label}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+
+                    <div className="tab-area">
+                        <div className="tabs">
+                            {['detail', 'supplement', 'expense'].map(t => (
+                                <div key={t} className={`tab ${activeTab === t ? 'active' : ''}`} onClick={() => { setActiveTab(t); setColumnFilters({}); }}>
+                                    {t === 'detail' ? '1. 세부사업' : t === 'supplement' ? '2. 추경' : '3. 세부지출현황'}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="content-card">
+                        <div className="table-wrapper" key={activeTab}>
+                            <table>
+                                <thead className="excel-header">
+                                    <tr>
+                                        {activeCols.map(col => (
+                                            <th key={col.key} style={{width: (activeTab === 'expense' ? expenseColWidths[col.wk] : detailColWidths[col.wk])+'px'}} onClick={() => setSortConfig({key: col.key, direction: sortConfig.key === col.key && sortConfig.direction === 'asc' ? 'desc' : 'asc'})}>
+                                                <div className="header-content">
+                                                    <span className={`filter-btn ${columnFilters[col.key]?.length > 0 ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveFilterCol(activeFilterCol === col.key ? null : col.key); }}>≣</span>
+                                                    <span>{col.label}</span>
+                                                    <span className="sort-icon">{sortConfig.key===col.key?(sortConfig.direction==='asc'?'▲':'▼'):'▼'}</span>
+                                                </div>
+                                                <div className="resizer" onMouseDown={e => startResize(e, col.wk, activeTab === 'expense')}></div>
+                                                {renderFilterMenu(col.key, activeTab === 'expense' ? expenseData : budgetData)}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {displayData.slice(0, 150).map((r, i) => (
+                                        <TableRow 
+                                            key={r._id || i} 
+                                            row={r} 
+                                            activeCols={activeCols} 
+                                            activeTab={activeTab}
+                                            onUpdateBudget={(key, val) => {
+                                                setBudgetData(prev => prev.map(row => row._id === r._id ? { ...row, [key]: val } : row));
+                                            }}
+                                        />
+                                    ))}
+                                    {displayData.length > 150 && (
+                                        <tr>
+                                            <td colSpan={activeCols.length} style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)' }}>
+                                                (데이터가 많아 상위 150건만 표시됩니다. 검색 필터를 사용해 주세요.)
+                                            </td>
+                                        </tr>
+                                    )}
+                                    <tr className="grand-total">
+                                        {activeTab === 'expense' ? (
+                                            (() => {
+                                                const labelSpan = activeCols.findIndex(c => c.wk === 'amount');
+                                                return (
+                                                    <>
+                                                        <td colSpan={labelSpan > 0 ? labelSpan : 1} className="center-cell">총 합 계</td>
+                                                        {activeCols.filter((_, idx) => idx >= labelSpan).map(col => (
+                                                            <td key={col.key} className={col.isNum ? 'num-cell' : 'center-cell'}>
+                                                                {col.key === '_amt' ? new Intl.NumberFormat().format(totals.expense) : ''}
+                                                            </td>
+                                                        ))}
+                                                    </>
+                                                );
+                                            })()
+                                        ) : (
+                                            (() => {
+                                                const firstNumIdx = activeCols.findIndex(c => c.isNum || c.isRate);
+                                                const labelSpan = firstNumIdx > 0 ? firstNumIdx : 1;
+                                                const afterNumCols = activeCols.slice(firstNumIdx);
+                                                return (
+                                                    <>
+                                                        <td colSpan={labelSpan} className="center-cell">총 합 계</td>
+                                                        {afterNumCols.map(col => {
+                                                            let val = '';
+                                                            let className = col.isNum ? 'num-cell' : col.isRate ? 'percent-cell' : 'center-cell';
+                                                            if (col.key === '_a') val = new Intl.NumberFormat().format(totals.a);
+                                                            else if (col.key === '_b') val = new Intl.NumberFormat().format(totals.b);
+                                                            else if (col.key === '_ab') val = new Intl.NumberFormat().format(totals.ab);
+                                                            else if (col.key === '_c') val = new Intl.NumberFormat().format(totals.c);
+                                                            else if (col.key === '_ac') val = new Intl.NumberFormat().format(totals.ac);
+                                                            else if (col.key === '추경') val = new Intl.NumberFormat().format(totals.supp);
+                                                            else if (col.key === '_exclude') val = new Intl.NumberFormat().format(totals.exclude);
+                                                            else if (col.key === '_rate') val = (totals.a > 0 ? ((totals.a - totals.b)/totals.a*100).toFixed(1) : '0.0') + '%';
+                                                            
+                                                            const isNeg = (col.key === '_a' && totals.a < 0) || (col.key === '_b' && totals.b < 0) || 
+                                                                          (col.key === '_ab' && totals.ab < 0) || (col.key === '_c' && totals.c < 0) || 
+                                                                          (col.key === '_ac' && totals.ac < 0) || (col.key === '_rate' && totals.a > 0 && (totals.a - totals.b) < 0);
+                                                            
+                                                            return <td key={col.key} className={`${className} ${isNeg ? 'negative-val' : ''}`}>{val}</td>;
+                                                        })}
+                                                    </>
+                                                );
+                                            })()
+                                        )}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

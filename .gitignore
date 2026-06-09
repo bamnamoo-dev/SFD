@@ -1,0 +1,18 @@
+# Node modules
+node_modules/
+
+# Production build outputs
+dist/
+
+# Local data file
+dashboard_data.json
+
+# PyInstaller temporary folders
+build/
+*.spec
+
+# System/IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
