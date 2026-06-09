@@ -264,8 +264,24 @@
         });
 
         function App() {
-            const [budgetData, setBudgetData] = useState([]);
-            const [expenseData, setExpenseData] = useState([]);
+            const [budgetData, setBudgetData] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('sfd_budget_data');
+                    return saved ? JSON.parse(saved) : [];
+                } catch (e) {
+                    console.error('Failed to load budget data from localStorage', e);
+                    return [];
+                }
+            });
+            const [expenseData, setExpenseData] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('sfd_expense_data');
+                    return saved ? JSON.parse(saved) : [];
+                } catch (e) {
+                    console.error('Failed to load expense data from localStorage', e);
+                    return [];
+                }
+            });
             const [activeTab, setActiveTab] = useState('detail');
             const [search, setSearch] = useState('');
             const [isPending, startTransition] = useTransition();
@@ -295,6 +311,22 @@
                 if (isLightMode) document.body.classList.add('light-mode');
                 else document.body.classList.remove('light-mode');
             }, [isLightMode]);
+
+            useEffect(() => {
+                try {
+                    localStorage.setItem('sfd_budget_data', JSON.stringify(budgetData));
+                } catch (e) {
+                    console.error('Failed to save budget data to localStorage', e);
+                }
+            }, [budgetData]);
+
+            useEffect(() => {
+                try {
+                    localStorage.setItem('sfd_expense_data', JSON.stringify(expenseData));
+                } catch (e) {
+                    console.error('Failed to save expense data to localStorage', e);
+                }
+            }, [expenseData]);
 
             const [detailColWidths, setDetailColWidths] = useState({ 
                 policy: 110, unit: 120, project: 150, item: 130, desc: 220, cost: 130, 
@@ -607,6 +639,19 @@
                                 📥 추경 엑셀 저장
                             </button>
                             <button className="toggle-btn" onClick={() => window.print()} style={{background: 'var(--primary)', color: 'white', border: 'none'}}>🖨️ 인쇄</button>
+                            {(budgetData.length > 0 || expenseData.length > 0) && (
+                                <button className="toggle-btn" 
+                                    onClick={() => {
+                                        if (confirm("저장된 데이터를 모두 삭제하고 초기화하시겠습니까?")) {
+                                            setBudgetData([]);
+                                            setExpenseData([]);
+                                        }
+                                    }} 
+                                    style={{background: 'var(--danger)', color: 'white', border: 'none'}}
+                                >
+                                    🗑️ 데이터 초기화
+                                </button>
+                            )}
                         </div>
                     </div>
                         
