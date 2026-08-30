@@ -3,196 +3,521 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>학교회계 집행현황 통합 대시보드</title>
+    <title>2026 학교회계 통합 대시보드</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-subtle: rgba(99, 102, 241, 0.15);
             --bg: #0f172a;
             --surface: #1e293b;
+            --surface-hover: #273549;
+            --surface-card: rgba(30, 41, 59, 0.85);
             --text: #f8fafc;
             --text-muted: #94a3b8;
             --border: #334155;
+            --border-light: rgba(255, 255, 255, 0.08);
             --success: #10b981;
+            --success-subtle: rgba(16, 185, 129, 0.15);
             --warning: #f59e0b;
+            --warning-subtle: rgba(245, 158, 11, 0.15);
             --danger: #ef4444;
-            --tab-active: #4f46e5;
-            --excel-header-bg: #000000;
+            --danger-subtle: rgba(239, 68, 68, 0.15);
+            --info: #0ea5e9;
+            --tab-active: #6366f1;
+            --excel-header-bg: #090d16;
             --excel-header-text: #ffffff;
+            --glass: rgba(30, 41, 59, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+            --shadow-md: 0 4px 12px -1px rgba(0, 0, 0, 0.3);
         }
+
         body.light-mode {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-subtle: rgba(79, 70, 229, 0.08);
             --bg: #f1f5f9;
             --surface: #ffffff;
+            --surface-hover: #f8fafc;
+            --surface-card: rgba(255, 255, 255, 0.95);
             --text: #0f172a;
             --text-muted: #64748b;
             --border: #cbd5e1;
+            --border-light: rgba(0, 0, 0, 0.06);
+            --success: #059669;
+            --success-subtle: rgba(5, 150, 105, 0.1);
+            --warning: #d97706;
+            --warning-subtle: rgba(217, 119, 6, 0.1);
+            --danger: #dc2626;
+            --danger-subtle: rgba(220, 38, 38, 0.1);
+            --info: #0284c7;
+            --tab-active: #4f46e5;
             --excel-header-bg: #f8fafc;
             --excel-header-text: #0f172a;
+            --glass: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 12px -1px rgba(0, 0, 0, 0.06);
         }
-        body { font-family: 'Outfit', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; overflow: hidden; height: 100vh; }
-        .container { width: 100%; max-width: 100%; margin: 0; padding: 0.4rem; box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 0.3rem; }
-        h1 { background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; font-size: 1.2rem; font-weight: 800; }
-        .creator-info { font-size: 0.65rem; color: #94a3b8; margin-left: 0.5rem; white-space: nowrap; }
-        .light-mode .creator-info { color: #64748b; }
-        .upload-section { display: grid; grid-template-columns: 1fr 1fr 200px; gap: 0.6rem; margin-bottom: 0.5rem; }
-        .upload-box { 
-            background: var(--surface); 
-            border: 2px dashed var(--border); border-radius: 12px;
-            padding: 0.8rem 1rem; cursor: pointer; transition: all 0.2s;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0.4rem;
-            position: relative; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Pretendard', 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            line-height: 1.4;
+            transition: background-color 0.25s ease, color 0.25s ease;
         }
-        .upload-box.drag-active {
-            border-color: #f59e0b;
-            background: rgba(245, 158, 11, 0.1);
-            transform: scale(1.01);
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+
+        #root { min-height: 100vh; }
+
+        .container {
+            width: 100%;
+            max-width: 100%;
+            padding: 0.4rem 0.7rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            gap: 0.35rem;
         }
-        .upload-box:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+
+        .animate-fade-in {
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(2px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 1. App Header */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.1rem 0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .logo-title-group {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .logo-title-group h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+        .badge-system {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            background: var(--primary-subtle);
+            color: var(--primary);
+            border-radius: 6px;
+            border: 1px solid var(--primary);
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .header-btn, .theme-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border-radius: 7px;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .header-btn:hover, .theme-toggle-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* 2. KPI Summary Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.45rem;
+        }
+        .kpi-card {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.45rem 0.65rem;
+            background: var(--surface-card);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(8px);
+        }
+        .kpi-icon-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .kpi-icon-wrap.primary { background: var(--primary-subtle); color: var(--primary); }
+        .kpi-icon-wrap.success { background: var(--success-subtle); color: var(--success); }
+        .kpi-icon-wrap.warning { background: var(--warning-subtle); color: var(--warning); }
+        .kpi-icon-wrap.info { background: rgba(14, 165, 233, 0.15); color: var(--info); }
+        .kpi-icon-wrap.neutral { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
+
+        .kpi-info { flex: 1; min-width: 0; }
+        .kpi-label-row { display: flex; justify-content: space-between; align-items: center; }
+        .kpi-label { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); }
+        .kpi-value {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .kpi-value.danger-val { color: var(--danger); }
+        .kpi-rate-badge { font-size: 0.65rem; font-weight: 700; color: var(--success); }
+        .kpi-rate-badge.neutral { color: var(--info); }
+        .kpi-progress-bar { width: 100%; height: 4px; background: var(--border); border-radius: 2px; margin-top: 2px; overflow: hidden; }
+        .kpi-progress-fill { height: 100%; background: linear-gradient(90deg, #10b981, #059669); transition: width 0.3s ease; }
+        .kpi-sub { font-size: 0.65rem; margin-top: 2px; }
+        .kpi-badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border-radius: 4px; font-weight: 600; font-size: 0.63rem; }
+        .kpi-badge.positive { background: var(--danger-subtle); color: var(--danger); }
+        .kpi-badge.negative { background: var(--info); color: white; }
+        .kpi-badge.warning { background: var(--warning-subtle); color: var(--warning); font-weight: 700; }
+        .kpi-badge.success { background: var(--success-subtle); color: var(--success); }
+        .kpi-badge.neutral { color: var(--text-muted); }
+
+        /* 3. Upload Section & Toolbar */
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr 270px;
+            gap: 0.45rem;
+        }
+        .upload-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 0.45rem 0.75rem;
+            background: var(--surface);
+            border: 1.5px dashed var(--border);
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            gap: 0.2rem;
+        }
+        .upload-box:hover { border-color: var(--primary); background: var(--surface-hover); }
+        .upload-box.drag-active { border-color: var(--warning); background: var(--warning-subtle); transform: scale(1.01); }
         .upload-box.done { border-color: var(--success); border-style: solid; }
-        .upload-guide { 
-            font-size: 1.1rem; color: var(--text); line-height: 1.6; 
-        }
-        .light-mode .upload-guide { color: var(--text); }
-        .box-sub { font-size: 1.0rem; color: var(--text-muted); text-align: center; margin-top: 0.4rem; }
-        .header-tools { flex: 2; display: flex; flex-direction: column; gap: 0.6rem; justify-content: center; min-width: 200px; }
-        .tool-row { display: flex; gap: 0.5rem; align-items: center; width: 100%; }
-        .tool-row .toggle-btn { flex: 1; white-space: nowrap; font-size: 0.8rem; padding: 0.6rem; justify-content: center; height: 38px; box-sizing: border-box; }
-        .header-tools input[type="text"] { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.6rem; border-radius: 0.4rem; font-size: 0.8rem; height: 38px; box-sizing: border-box; min-width: 0; }
-        
-        .tab-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
-        .tabs { display: flex; gap: 0.4rem; background: rgba(0,0,0,0.2); padding: 0.25rem; border-radius: 0.5rem; width: fit-content; }
-        .tab { padding: 0.4rem 0.8rem; border-radius: 0.3rem; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: 0.2s; color: var(--text-muted); }
-        .tab.active { background: var(--tab-active); color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); }
-        
-        .toggle-btn { 
-            background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); 
-            padding: 0.4rem 0.8rem; border-radius: 0.4rem; font-size: 0.75rem; font-weight: 600; 
-            cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px;
-        }
-        .toggle-btn:hover { border-color: var(--primary); color: white; }
-        .toggle-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
-        body.light-mode .toggle-btn { background: #ffffff; color: #475569; }
-        body.light-mode .toggle-btn:hover { color: var(--primary); border-color: var(--primary); }
+        .upload-guide { display: flex; flex-direction: column; gap: 1px; }
+        .upload-guide strong { font-size: 0.82rem; color: var(--text); display: flex; align-items: center; gap: 4px; }
+        .box-sub-guide { font-size: 0.66rem; color: var(--text-muted); line-height: 1.25; }
+        .status-badge { font-size: 0.7rem; font-weight: 700; }
+        .status-badge.done { color: var(--success); }
+        .status-badge.ready { color: var(--primary); }
 
-        body.light-mode .upload-box { background: #ffffff; }
-        body.light-mode .upload-guide { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; }
-        body.light-mode .upload-guide strong { color: #c2410c; }
-        body.light-mode .path-arrow { color: #6366f1; }
-        body.light-mode h1 { background: linear-gradient(to right, #4f46e5, #7c3aed); -webkit-background-clip: text; }
-        
-        .content-card { background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; overflow: hidden; width: 100%; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-        body:not(.light-mode) .content-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
-        .table-wrapper { overflow: auto; flex: 1; position: relative; width: 100%; }
-        table { border-collapse: collapse; font-size: 1.0rem; table-layout: fixed; width: 100%; min-width: 100%; background: var(--surface); }
-        
-        .excel-header th { 
-            background: var(--excel-header-bg) !important; color: var(--excel-header-text) !important; 
-            padding: 0.6rem 0.3rem; text-align: center; border: 1px solid #333; 
-            position: sticky !important; top: 0 !important; z-index: 100; font-weight: 600; cursor: pointer; user-select: none;
-            white-space: nowrap; font-size: 0.85rem;
+        .header-tools { display: flex; flex-direction: column; justify-content: space-between; gap: 0.3rem; }
+        .search-box-wrap { position: relative; width: 100%; }
+        .search-icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+        .search-input {
+            width: 100%;
+            padding: 0.35rem 0.5rem 0.35rem 1.7rem;
+            font-size: 0.75rem;
+            border-radius: 7px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-subtle); }
+
+        .tool-row.buttons { display: grid; grid-template-columns: 1fr 1fr 0.8fr; gap: 0.25rem; }
+        .tool-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2rem;
+            padding: 0.35rem 0.45rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border-radius: 7px;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tool-btn:hover { background: var(--surface-hover); border-color: var(--primary); }
+        .tool-btn.export-btn.active { background: var(--success); color: white; border-color: var(--success); }
+        .tool-btn.print-btn { background: var(--primary); color: white; border-color: var(--primary); }
+        .tool-btn.print-btn:hover { background: var(--primary-hover); }
+
+        /* 4. Tab Area */
+        .tab-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.2rem;
+        }
+        .tabs { display: flex; gap: 0.25rem; }
+        .tab {
+            padding: 0.3rem 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            background: transparent;
+        }
+        .tab:hover { color: var(--text); background: var(--surface-hover); }
+        .tab.active { color: white; background: var(--tab-active); box-shadow: var(--shadow-sm); }
+        .tab-status-count { font-size: 0.72rem; color: var(--text-muted); }
+        .tab-status-count strong { color: var(--primary); }
+
+        /* 5. Supplement Toolbar */
+        .supplement-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--primary-subtle);
+            border: 1px solid var(--primary);
+            padding: 0.3rem 0.6rem;
+            border-radius: 7px;
+        }
+        .toolbar-left { display: flex; align-items: center; gap: 0.45rem; }
+        .toolbar-title { font-size: 0.72rem; font-weight: 700; color: var(--primary); }
+        .supp-tool-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.2rem 0.45rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 5px;
+            border: 1px solid var(--primary);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .supp-tool-btn:hover { background: var(--primary); color: white; }
+        .supp-tool-btn .icon-neg { color: var(--danger); }
+        .toolbar-right { display: flex; align-items: center; gap: 0.25rem; }
+        .supp-history-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.2rem 0.4rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .supp-history-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .supp-history-btn:not(:disabled):hover { border-color: var(--primary); color: var(--primary); }
+
+        /* 6. Content Card & Excel Table */
+        .content-card {
+            flex: 1;
+            min-height: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-md);
+        }
+        .table-wrapper { flex: 1; overflow: auto; position: relative; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.78rem; text-align: left; }
+        thead.excel-header {
+            position: sticky; top: 0; z-index: 10;
+            background: var(--excel-header-bg); color: var(--excel-header-text);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        thead.excel-header th {
+            padding: 0.4rem 0.45rem;
+            font-weight: 700;
+            border-right: 1px solid var(--border);
+            border-bottom: 2px solid var(--border);
+            user-select: none;
+            cursor: pointer;
             position: relative;
+            white-space: nowrap;
+            font-size: 0.75rem;
         }
-        .header-content { display: flex; align-items: center; justify-content: center; gap: 4px; }
-        .filter-btn { 
-            color: #888; font-size: 12px; cursor: pointer; padding: 1px 3px; border-radius: 3px; 
-            background: rgba(255,255,255,0.05); border: 1px solid transparent; transition: 0.2s;
-            line-height: 1; display: inline-flex; align-items: center;
-        }
-        .filter-btn:hover { background: #333; color: white; border-color: #555; }
-        .filter-btn.active { color: var(--success); border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        .header-content { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+        .header-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+        .filter-btn { padding: 2px; border-radius: 3px; color: var(--text-muted); cursor: pointer; }
+        .filter-btn.active { color: var(--warning); background: var(--warning-subtle); }
+        .filter-btn:hover { color: var(--primary); }
+        .resizer { position: absolute; right: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 1; }
+        .resizer:hover { background: var(--primary); }
 
+        tbody tr { border-bottom: 1px solid var(--border); transition: background-color 0.15s ease; }
+        tbody tr:hover { background-color: var(--surface-hover); }
+        tbody td { padding: 0.32rem 0.45rem; border-right: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .num-cell { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+        .percent-cell { text-align: right; font-weight: 600; }
+        .center-cell { text-align: center; }
+        .text-cell { text-align: left; }
+        .negative-val { color: var(--danger) !important; font-weight: 700; }
+
+        .supp-cell { background: rgba(99, 102, 241, 0.05); }
+        .supp-positive { color: #ef4444 !important; font-weight: 700; }
+        .supp-negative { color: #3b82f6 !important; font-weight: 700; }
+        .edit-input {
+            width: 100%; padding: 2px 4px; font-size: 0.78rem; font-weight: 700; text-align: right;
+            border: 1px solid transparent; border-radius: 4px; background: rgba(255, 255, 255, 0.08);
+            color: inherit; outline: none; font-variant-numeric: tabular-nums;
+        }
+        .light-mode .edit-input { background: #ffffff; border-color: #cbd5e1; }
+        .edit-input:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 0 2px var(--primary-subtle); }
+        .edit-input-note { width: 100%; padding: 2px 4px; font-size: 0.75rem; border: 1px solid transparent; border-radius: 4px; background: transparent; color: inherit; outline: none; }
+        .edit-input-note:focus { border-color: var(--primary); background: var(--surface); }
+
+        tr.total-detail {
+            background-color: rgba(99, 102, 241, 0.12) !important;
+            font-weight: 700;
+            border-top: 1.5px solid var(--primary);
+            border-bottom: 1.5px solid var(--primary);
+        }
+        .light-mode tr.total-detail { background-color: #e0e7ff !important; color: #1e40af; }
+
+        tr.grand-total {
+            position: sticky; bottom: 0; z-index: 10;
+            background-color: #0b1120 !important; color: #ffffff !important;
+            font-weight: 800; border-top: 2px solid var(--primary);
+            box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.3);
+        }
+        .light-mode tr.grand-total { background-color: #1e293b !important; color: #ffffff !important; }
+        tr.grand-total td { padding: 0.45rem 0.5rem; border-right: 1px solid rgba(255, 255, 255, 0.15); }
+
+        /* Filter Menu */
+        .filter-menu {
+            position: absolute; top: 100%; left: 0; min-width: 170px; max-width: 250px;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+            box-shadow: var(--shadow-md); padding: 0.4rem; z-index: 50; color: var(--text); font-weight: normal;
+        }
+        .date-mode-toggle { display: flex; gap: 4px; margin-bottom: 5px; }
+        .date-mode-toggle button {
+            flex: 1; padding: 3px 0; font-size: 0.7rem; font-weight: 600; border-radius: 4px;
+            border: 1px solid var(--border); background: var(--surface-hover); color: var(--text); cursor: pointer;
+        }
+        .date-mode-toggle button.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .filter-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+        .filter-scroll-list { max-height: 160px; overflow-y: auto; }
+        .filter-item { display: flex; align-items: center; gap: 6px; padding: 3px 6px; font-size: 0.72rem; border-radius: 4px; cursor: pointer; }
+        .filter-item:hover { background: var(--surface-hover); }
+        .filter-item.header-item { font-weight: 700; }
+
+        /* Column Manager Modal */
+        .col-manager-backdrop {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center; z-index: 100;
+        }
+        .col-manager-modal {
+            width: 90%; max-width: 460px; background: var(--surface);
+            border: 1px solid var(--border); border-radius: 12px;
+            box-shadow: var(--shadow-md); overflow: hidden;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 1rem; border-bottom: 1px solid var(--border); }
+        .modal-header h3 { font-size: 0.9rem; font-weight: 700; }
+        .close-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; }
+        .modal-body { padding: 0.8rem 1rem; }
+        .modal-desc { font-size: 0.73rem; color: var(--text-muted); margin-bottom: 0.6rem; }
+        .col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; max-height: 260px; overflow-y: auto; }
+        .col-checkbox-label {
+            display: flex; align-items: center; gap: 6px; padding: 0.35rem 0.55rem;
+            font-size: 0.75rem; border: 1px solid var(--border); border-radius: 6px;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .col-checkbox-label:hover { background: var(--surface-hover); }
+        .col-checkbox-label.checked { border-color: var(--primary); background: var(--primary-subtle); color: var(--primary); font-weight: 600; }
+        .modal-footer { display: flex; justify-content: space-between; padding: 0.65rem 1rem; border-top: 1px solid var(--border); }
+        .btn-primary { padding: 0.35rem 0.9rem; font-size: 0.75rem; font-weight: 700; border-radius: 6px; background: var(--primary); color: white; border: none; cursor: pointer; }
+        .btn-secondary { padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600; border-radius: 6px; background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); cursor: pointer; }
+
+        /* Print */
         @media print {
-            body { background: white !important; color: black !important; overflow: visible !important; height: auto !important; }
-            .container { padding: 0 !important; height: auto !important; overflow: visible !important; width: 100% !important; max-width: 100% !important; }
-            .upload-section, .header-tools, .tab-area, .creator-info, .resizer, .filter-btn, .sort-icon { display: none !important; }
+            @page { size: A4 landscape; margin: 10mm; }
+            body { background: white !important; color: black !important; overflow: visible !important; height: auto !important; font-size: 8pt !important; }
+            .container { padding: 0 !important; height: auto !important; overflow: visible !important; width: 100% !important; }
+            .app-header .header-right, .upload-section, .supplement-toolbar, .tab-area, .resizer, .filter-btn, .sort-icon { display: none !important; }
+            .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; margin-bottom: 10px !important; }
+            .kpi-card { border: 1px solid #999 !important; background: #fff !important; box-shadow: none !important; padding: 4px !important; }
             .content-card { border: none !important; box-shadow: none !important; overflow: visible !important; height: auto !important; }
             .table-wrapper { overflow: visible !important; height: auto !important; max-height: none !important; }
             table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #000 !important; }
-            th, td { border: 1px solid #000 !important; padding: 4px !important; color: #000 !important; background: #fff !important; font-size: 8pt !important; }
-            .excel-header th { position: static !important; background: #f0f0f0 !important; }
-            h1 { -webkit-text-fill-color: #000 !important; font-size: 14pt !important; margin-bottom: 10px !important; text-align: center; }
-            .edit-input { border: none !important; padding: 0 !important; background: transparent !important; }
+            th, td { border: 1px solid #333 !important; padding: 3px 4px !important; color: #000 !important; background: #fff !important; font-size: 7.5pt !important; }
+            thead.excel-header th { position: static !important; background: #e2e8f0 !important; color: #000 !important; }
+            tr.total-detail { background: #f1f5f9 !important; font-weight: bold !important; }
+            tr.grand-total { position: static !important; background: #cbd5e1 !important; color: #000 !important; font-weight: bold !important; }
+            .edit-input, .edit-input-note { border: none !important; padding: 0 !important; background: transparent !important; color: #000 !important; }
         }
-
-        .filter-menu { 
-            position: absolute; top: 100%; left: 0; background: var(--surface); 
-            border: 1px solid var(--border); border-radius: 8px; padding: 10px; z-index: 1000; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3); min-width: 180px; max-height: 400px; overflow-y: auto; text-align: left;
-        }
-        .date-mode-toggle {
-            display: flex; gap: 4px; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 6px; margin-bottom: 8px;
-        }
-        .date-mode-toggle button {
-            flex: 1; padding: 4px 0; border-radius: 4px; font-size: 0.75rem; background: transparent; 
-            color: var(--text-muted); border: none; cursor: pointer; transition: 0.2s;
-        }
-        .date-mode-toggle button.active {
-            background: var(--primary); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .filter-item { display: flex; align-items: center; gap: 8px; padding: 6px 4px; font-size: 0.7rem; cursor: pointer; border-radius: 4px; transition: 0.15s; }
-        .filter-item:hover { background: #334155; }
-
-        td { padding: 0.5rem 0.6rem; border: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.9; }
-        tr:hover td { background: rgba(255,255,255,0.04); }
-        body.light-mode tr:hover td { background: rgba(0,0,0,0.03); }
-        
-        .total-detail { 
-            background: linear-gradient(90deg, rgba(79, 70, 229, 0.4), rgba(124, 58, 237, 0.25)) !important; 
-            font-weight: 700; color: #ffffff; 
-            border-top: 2px solid rgba(139, 92, 246, 0.4);
-            border-bottom: 2px solid rgba(139, 92, 246, 0.4);
-        }
-        body.light-mode .total-detail {
-            background: linear-gradient(90deg, #dbeafe, #e0e7ff) !important;
-            color: #1e40af;
-            border-top: 2px solid #93c5fd;
-            border-bottom: 2px solid #93c5fd;
-        }
-        
-        .grand-total { 
-            background: var(--surface) !important; font-weight: 700; color: var(--success); 
-            border-top: 2px solid var(--success); position: sticky; bottom: 0; z-index: 50;
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
-        }
-        body.light-mode .grand-total { background: #f8fafc !important; }
-        footer { margin-top: 1.5rem; padding: 1rem; text-align: center; font-size: 0.75rem; color: var(--text-muted); opacity: 0.8; border-top: 1px solid var(--border); }
-        .num-cell { text-align: right; font-family: 'Consolas', monospace; }
-        .center-cell { text-align: center; }
-        .percent-cell { text-align: center; font-weight: 600; }
-        .negative-val { color: #000000 !important; font-weight: 800 !important; background: #fbbf24 !important; }
-        body.light-mode .negative-val { color: #000000 !important; background: #fbbf24 !important; }
-        
-        .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 5px; cursor: col-resize; z-index: 110; }
-        .sort-icon { font-size: 9px; color: var(--primary); opacity: 0.7; }
-        .col-manager-modal { position: absolute; right: 10px; top: 150px; background: var(--surface); border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; width: 300px; }
-        .col-manager-modal label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; cursor: pointer; padding: 0.3rem; border-radius: 0.3rem; transition: 0.2s; }
-        .col-manager-modal label:hover { background: rgba(255,255,255,0.05); }
-        body.light-mode .col-manager-modal label:hover { background: rgba(0,0,0,0.03); }
-        .col-manager-modal input { cursor: pointer; }
-        .edit-input { width: 100%; border: none; background: transparent; color: inherit; text-align: right; font-family: inherit; font-size: 0.85rem; padding: 2px 4px; border-radius: 4px; }
-        .edit-input:focus { background: rgba(255,255,255,0.1); outline: 1px solid var(--primary); }
-        .edit-input::placeholder { color: var(--text-muted); opacity: 0.5; }
-        
-        /* 추경 컬럼 시인성 개선: 입력 시 흰색 배경 */
-        .supp-cell { background: rgba(255, 255, 255, 0.03) !important; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); }
-        .supp-positive { color: #d32f2f !important; background: #ffffff !important; font-weight: 800; }
-        .supp-negative { color: #1976d2 !important; background: #ffffff !important; font-weight: 800; }
-        
-        body.light-mode .supp-cell { background: #f8fafc !important; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
-        
-        .edit-input { background: transparent !important; color: inherit !important; font-weight: inherit !important; }
     </style>
 </head>
 <body>
     <div id="root"></div>
+
     <script type="text/babel">
-        const { useState, useMemo, useRef, useEffect, useTransition } = React;
+        const { useState, useMemo, useRef, useEffect, useCallback, useTransition, memo } = React;
+
+        // Icons
+        const IconDollar = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
+        const IconTrending = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>;
+        const IconCheckCircle = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>;
+        const IconAlert = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+        const IconDownload = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+        const IconUpload = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+        const IconSun = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>;
+        const IconMoon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>;
+        const IconSearch = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
+        const IconSettings = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
+        const IconSave = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
+        const IconPrinter = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>;
+        const IconMinusCircle = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>;
+        const IconRotateCcw = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
+        const IconUndo = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>;
+        const IconRedo = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>;
 
         const formatDate = (val) => {
             if (!val) return '';
@@ -207,14 +532,28 @@
             return String(val);
         };
 
-        const TableRow = React.memo(({ row: r, activeCols, activeTab, onUpdateBudget }) => {
+        const formatCurrency = (val) => {
+            const num = Number(val);
+            if (isNaN(num)) return '0';
+            return new Intl.NumberFormat('ko-KR').format(num);
+        };
+
+        const formatPercent = (val) => {
+            if (val === undefined || val === null || val === '') return '0.0%';
+            const num = Number(val);
+            if (isNaN(num)) return '0.0%';
+            return `${num.toFixed(1)}%`;
+        };
+
+        const TableRow = memo(({ row: r, activeCols, activeTab, onUpdateBudget }) => {
             return (
                 <tr className={r._totalType ? `total-${r._totalType}` : ''}>
                     {activeCols.map(col => {
                         const val = r[col.key];
                         const numVal = Number(val);
                         const isNegative = (col.isNum || col.isRate) && numVal < 0;
-                        const isEditable = activeTab === 'supplement' && col.key === '추경' && !r._totalType;
+                        const isEditableSupp = activeTab === 'supplement' && col.key === '추경' && !r._totalType;
+                        const isEditableNote = activeTab === 'supplement' && col.key === '_note' && !r._totalType;
                         
                         const isSuppCol = col.key === '추경';
                         let specialClass = isSuppCol ? 'supp-cell' : '';
@@ -223,7 +562,7 @@
 
                         return (
                             <td key={col.key} className={`${col.isNum ? 'num-cell' : col.isRate ? 'percent-cell' : 'center-cell'} ${isNegative && !isSuppCol ? 'negative-val' : ''} ${specialClass}`}>
-                                {isEditable ? (
+                                {isEditableSupp ? (
                                     <input 
                                         type="text" 
                                         className={`edit-input ${specialClass}`}
@@ -231,29 +570,24 @@
                                         placeholder="0"
                                         onChange={(e) => {
                                             const raw = e.target.value.replace(/[^0-9.-]/g, '');
-                                            onUpdateBudget('추경', raw);
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                                                e.preventDefault();
-                                                const inputs = Array.from(document.querySelectorAll('.edit-input'));
-                                                const index = inputs.indexOf(e.target);
-                                                if (e.key === 'ArrowUp' && index > 0) {
-                                                    inputs[index - 1].focus();
-                                                    inputs[index - 1].select();
-                                                } else if (e.key === 'ArrowDown' && index < inputs.length - 1) {
-                                                    inputs[index + 1].focus();
-                                                    inputs[index + 1].select();
-                                                }
-                                            }
+                                            onUpdateBudget(r._id, '추경', raw);
                                         }}
                                         onFocus={(e) => e.target.select()}
                                     />
+                                ) : isEditableNote ? (
+                                    <input 
+                                        type="text" 
+                                        className="edit-input-note"
+                                        value={val || ''}
+                                        placeholder="추경 사유 입력..."
+                                        onChange={(e) => onUpdateBudget(r._id, '_note', e.target.value)}
+                                    />
                                 ) : (
-                                    col.isNum ? new Intl.NumberFormat().format(numVal || 0) : 
-                                    col.isRate ? (val || '0.0') + '%' : 
+                                    col.isNum ? formatCurrency(numVal) : 
+                                    col.isRate ? formatPercent(val) : 
                                     (col.key === '_exclude' ? (r._exclude || r['정산재원'] || '') : 
-                                    (col.key === '_costItem' ? r._costItem : r[col.key]))
+                                    (col.key === '_costItem' ? (r._costItem || r['원가통계비목'] || '') : 
+                                    (col.key === '_note' ? (r._note || '') : r[col.key] || '')))
                                 )}
                             </td>
                         );
@@ -267,20 +601,17 @@
                 try {
                     const saved = localStorage.getItem('sfd_budget_data');
                     return saved ? JSON.parse(saved) : [];
-                } catch (e) {
-                    console.error('Failed to load budget data from localStorage', e);
-                    return [];
-                }
+                } catch (e) { return []; }
             });
             const [expenseData, setExpenseData] = useState(() => {
                 try {
                     const saved = localStorage.getItem('sfd_expense_data');
                     return saved ? JSON.parse(saved) : [];
-                } catch (e) {
-                    console.error('Failed to load expense data from localStorage', e);
-                    return [];
-                }
+                } catch (e) { return []; }
             });
+            const [history, setHistory] = useState([]);
+            const [historyIndex, setHistoryIndex] = useState(-1);
+
             const [activeTab, setActiveTab] = useState('detail');
             const [search, setSearch] = useState('');
             const [isPending, startTransition] = useTransition();
@@ -292,49 +623,81 @@
             const [isLightMode, setIsLightMode] = useState(true);
             const [dragOverBox, setDragOverBox] = useState(null);
             const [dateMode, setDateMode] = useState('month');
+
             const [hiddenCols, setHiddenCols] = useState({ 
-                detail: { policy: true, unit: true, manager: true, supplement: true },
+                detail: { policy: true, unit: true, manager: true, supplement: true, note: true },
                 supplement: { policy: true, unit: true, manager: true, rate: true },
                 expense: {}
             });
+
+            const [detailColWidths, setDetailColWidths] = useState({ 
+                policy: 110, unit: 120, project: 150, item: 140, desc: 220, cost: 130, 
+                a: 110, b: 110, ab: 140, c: 110, ac: 140, supplement: 110, note: 160,
+                rate: 80, exclude: 90, manager: 120 
+            });
+            const [expenseColWidths, setExpenseColWidths] = useState({ 
+                proj: 200, item: 200, category: 150, date: 120, title: 450, payee: 150, amount: 130 
+            });
+
             const filterRef = useRef(null);
             const managerRef = useRef(null);
 
-            const handleSearchChange = (e) => {
-                const val = e.target.value;
-                setSearch(val);
-                startTransition(() => setDeferredSearch(val));
-            };
+            // LocalStorage & API Auto-Save
+            useEffect(() => {
+                try { localStorage.setItem('sfd_budget_data', JSON.stringify(budgetData)); } catch (e) {}
+            }, [budgetData]);
 
+            useEffect(() => {
+                try { localStorage.setItem('sfd_expense_data', JSON.stringify(expenseData)); } catch (e) {}
+            }, [expenseData]);
+
+            // Heartbeat
+            useEffect(() => {
+                const sendHeartbeat = () => { fetch('/api/heartbeat').catch(() => {}); };
+                sendHeartbeat();
+                const interval = setInterval(sendHeartbeat, 3000);
+                return () => clearInterval(interval);
+            }, []);
+
+            // API Load on Startup
+            useEffect(() => {
+                fetch('/api/load')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.budgetData && data.budgetData.length > 0) setBudgetData(data.budgetData);
+                        if (data.expenseData && data.expenseData.length > 0) setExpenseData(data.expenseData);
+                    })
+                    .catch(() => {});
+            }, []);
+
+            // Theme toggle
             useEffect(() => {
                 if (isLightMode) document.body.classList.add('light-mode');
                 else document.body.classList.remove('light-mode');
             }, [isLightMode]);
 
+            // Undo / Redo Key listener
             useEffect(() => {
-                try {
-                    localStorage.setItem('sfd_budget_data', JSON.stringify(budgetData));
-                } catch (e) {
-                    console.error('Failed to save budget data to localStorage', e);
-                }
-            }, [budgetData]);
+                const handleKeyDown = (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                        e.preventDefault();
+                        if (historyIndex > 0) {
+                            setBudgetData(JSON.parse(JSON.stringify(history[historyIndex - 1])));
+                            setHistoryIndex(historyIndex - 1);
+                        }
+                    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+                        e.preventDefault();
+                        if (historyIndex < history.length - 1) {
+                            setBudgetData(JSON.parse(JSON.stringify(history[historyIndex + 1])));
+                            setHistoryIndex(historyIndex + 1);
+                        }
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [history, historyIndex]);
 
-            useEffect(() => {
-                try {
-                    localStorage.setItem('sfd_expense_data', JSON.stringify(expenseData));
-                } catch (e) {
-                    console.error('Failed to save expense data to localStorage', e);
-                }
-            }, [expenseData]);
-
-            const [detailColWidths, setDetailColWidths] = useState({ 
-                policy: 110, unit: 120, project: 150, item: 130, desc: 220, cost: 130, 
-                a: 110, b: 110, ab: 140, c: 110, ac: 140, supplement: 100, rate: 80, exclude: 90, manager: 120 
-            });
-            const [expenseColWidths, setExpenseColWidths] = useState({ 
-                proj: 200, item: 200, category: 150, date: 120, title: 800, payee: 150, amount: 120 
-            });
-
+            // Outside click to close filter/modal
             useEffect(() => {
                 const handleClickOutside = (event) => {
                     if (filterRef.current && !filterRef.current.contains(event.target)) setActiveFilterCol(null);
@@ -344,25 +707,73 @@
                 return () => document.removeEventListener('mousedown', handleClickOutside);
             }, []);
 
-            const updateBudgetValue = (id, key, val) => {
-                setBudgetData(prev => prev.map(r => r._id === id ? { ...r, [key]: val } : r));
+            const pushHistory = (newData) => {
+                setHistory(prev => {
+                    const next = prev.slice(0, historyIndex + 1);
+                    return [...next, JSON.parse(JSON.stringify(newData))];
+                });
+                setHistoryIndex(prev => prev + 1);
             };
 
-            const exportSupplementExcel = () => {
-                if (!budgetData.length) return alert('저장할 데이터가 없습니다.');
-                const dataToExport = displayData.map(r => {
-                    const obj = {};
-                    activeCols.forEach(col => {
-                        let val = r[col.key];
-                        if (col.isNum) val = Number(val) || 0;
-                        obj[col.label] = val;
-                    });
-                    return obj;
+            const updateBudgetValue = (id, key, val) => {
+                setBudgetData(prev => {
+                    const next = prev.map(r => r._id === id ? { ...r, [key]: val } : r);
+                    pushHistory(next);
+                    return next;
                 });
-                const ws = XLSX.utils.json_to_sheet(dataToExport);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "추경현황");
-                XLSX.writeFile(wb, `학교회계_추경현황_${new Date().toISOString().slice(0,10)}.xlsx`);
+            };
+
+            const reduceAllBalance = () => {
+                if (!budgetData.length) return;
+                if (!confirm('남아있는 모든 원인행위잔액(A-B)을 추경 감액(-)으로 일괄 적용하시겠습니까?')) return;
+                setBudgetData(prev => {
+                    const next = prev.map(row => {
+                        if (row._totalType) return row;
+                        const balance = (row._a || 0) - (row._b || 0);
+                        if (balance > 0) {
+                            return { ...row, 추경: String(-balance), _note: '불용 방지 잔액 전액 감액' };
+                        }
+                        return row;
+                    });
+                    pushHistory(next);
+                    return next;
+                });
+            };
+
+            const resetSupplement = () => {
+                if (!confirm('입력된 모든 추경 금액과 사유를 초기화하시겠습니까?')) return;
+                setBudgetData(prev => {
+                    const next = prev.map(row => ({ ...row, 추경: '', _note: '' }));
+                    pushHistory(next);
+                    return next;
+                });
+            };
+
+            const exportJSON = () => {
+                const data = { budgetData, expenseData, exportDate: new Date().toISOString(), version: '2.5' };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `학교회계_데이터백업_${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+
+            const importJSON = (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const json = JSON.parse(event.target.result);
+                        if (json.budgetData) setBudgetData(json.budgetData);
+                        if (json.expenseData) setExpenseData(json.expenseData);
+                        alert('데이터가 성공적으로 복원되었습니다.');
+                    } catch (err) { alert('올바르지 않은 백업 파일 형식입니다.'); }
+                };
+                reader.readAsText(file);
             };
 
             const processBudgetFile = (file) => {
@@ -372,7 +783,7 @@
                     const wb = XLSX.read(evt.target.result, { type: 'binary' });
                     const ws = wb.Sheets[wb.SheetNames[0]];
                     const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-                    let headerIdx = rows.findIndex(r => r.includes('정책사업') || r.includes('단위사업'));
+                    let headerIdx = rows.findIndex(r => r && Array.isArray(r) && r.some(v => String(v).includes('정책사업') || String(v).includes('단위사업') || String(v).includes('세부사업')));
                     if (headerIdx === -1) headerIdx = 0;
                     
                     const json = XLSX.utils.sheet_to_json(ws, { range: headerIdx });
@@ -382,21 +793,24 @@
                             return /합계|소계|누계|전기계|\[.*계.*\]|\[.*소.*\]/.test(s);
                         });
                         if (isTotalRow) return false;
-                        return (r['정책사업'] || r['단위사업'] || r['세부사업']);
+                        return (r['정책사업'] || r['단위사업'] || r['세부사업'] || r['세부항목']);
                     }).map((r, idx) => {
                         const a = Number(r['예산현액 (A)'] || r['예산현액(A)'] || r['예산현액'] || 0);
                         const b = Number(r['원인행위액 (B)'] || r['원인행위액(B)'] || r['원인행위액'] || 0);
                         const c = Number(r['지출액 (C)'] || r['지출액(C)'] || r['지출액'] || 0);
                         return {
-                            ...r, _id: idx,
+                            ...r, _id: `b_${idx}_${Date.now()}`,
                             _a: a, _b: b, _ab: a - b, _c: c, _ac: a - c,
                             _rate: a > 0 ? ((a - b) / a * 100).toFixed(1) : '0.0',
                             _exclude: Number(r['정산재원'] || r['결산제외'] || 0),
                             _costItem: r['원가통계비목'] || r['원가비목'] || r['원가통계'] || '',
+                            추경: r['추경'] ? String(r['추경']) : '',
+                            _note: r['비고'] || r['추경사유'] || '',
                             _totalType: ''
                         };
                     });
                     setBudgetData(filtered);
+                    pushHistory(filtered);
                     setActiveTab('detail');
                 };
                 reader.readAsBinaryString(file);
@@ -410,7 +824,7 @@
                     const ws = wb.Sheets[wb.SheetNames[0]];
                     const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
                     let headerIdx = rows.findIndex(r => 
-                        r.some(v => String(v).includes('지출일자') || String(v).includes('세부사업명') || String(v).includes('채주'))
+                        r && Array.isArray(r) && r.some(v => String(v).includes('지출일자') || String(v).includes('세부사업명') || String(v).includes('채주'))
                     );
                     if (headerIdx === -1) headerIdx = 0;
                     const json = XLSX.utils.sheet_to_json(ws, { range: headerIdx });
@@ -423,8 +837,9 @@
                         const amt = Number(r['지출액'] || r['지급액'] || r['금액'] || r['지출액(C)'] || 0);
                         return amt !== 0;
                     });
-                    setExpenseData(filteredJson.map(r => ({
+                    setExpenseData(filteredJson.map((r, idx) => ({
                         ...r,
+                        _id: `e_${idx}_${Date.now()}`,
                         _amt: Number(r['지출액'] || r['지급액'] || r['금액'] || r['지출액(C)'] || 0),
                         _date: formatDate(r['지출일자'] || r['일자'] || r['지출일'])
                     })));
@@ -433,18 +848,88 @@
                 reader.readAsBinaryString(file);
             };
 
+            // KPI Stats
+            const stats = useMemo(() => {
+                const raw = budgetData.filter(d => !d._totalType);
+                if (!raw.length) return { totalA: 0, totalB: 0, totalC: 0, totalAB: 0, totalSupp: 0, execRate: 0, disbRate: 0, riskCount: 0, totalCount: 0 };
+                const totalA = raw.reduce((s, r) => s + (r._a || 0), 0);
+                const totalB = raw.reduce((s, r) => s + (r._b || 0), 0);
+                const totalC = raw.reduce((s, r) => s + (r._c || 0), 0);
+                const totalSupp = raw.reduce((s, r) => s + (Number(r['추경']) || 0), 0);
+                const execRate = totalA > 0 ? (totalB / totalA * 100) : 0;
+                const disbRate = totalB > 0 ? (totalC / totalB * 100) : 0;
+
+                const projectMap = {};
+                raw.forEach(r => {
+                    const proj = r['세부사업'] || '기타';
+                    if (!projectMap[proj]) projectMap[proj] = { a: 0, b: 0 };
+                    projectMap[proj].a += (r._a || 0);
+                    projectMap[proj].b += (r._b || 0);
+                });
+                const projectNames = Object.keys(projectMap);
+                const riskCount = projectNames.filter(p => {
+                    const item = projectMap[p];
+                    return item.a > 0 && ((item.b / item.a) * 100 < 70);
+                }).length;
+
+                return { totalA, totalB, totalC, totalAB: totalA - totalB, totalSupp, execRate, disbRate, riskCount, totalCount: projectNames.length };
+            }, [budgetData]);
+
+            const detailCols = useMemo(() => [
+                { label: '정책사업', key: '정책사업', wk: 'policy' },
+                { label: '단위사업', key: '단위사업', wk: 'unit' },
+                { label: '세부사업', key: '세부사업', wk: 'project' },
+                { label: '세부항목', key: '세부항목', wk: 'item' },
+                { label: '산출내역', key: '산출내역', wk: 'desc' },
+                { label: '원가통계비목', key: '_costItem', wk: 'cost' },
+                { label: '예산현액 (A)', key: '_a', wk: 'a', isNum: true },
+                { label: '원인행위액 (B)', key: '_b', wk: 'b', isNum: true },
+                { label: '원인행위잔액 (A-B)', key: '_ab', wk: 'ab', isNum: true },
+                { label: '지출액 (C)', key: '_c', wk: 'c', isNum: true },
+                { label: '지출잔액 (A-C)', key: '_ac', wk: 'ac', isNum: true },
+                { label: '추경', key: '추경', wk: 'supplement', isNum: true },
+                { label: '추경 사유(비고)', key: '_note', wk: 'note' },
+                { label: '불용율', key: '_rate', wk: 'rate', isRate: true },
+                { label: '정산재원', key: '_exclude', wk: 'exclude', isNum: true },
+                { label: '세부항목담당자', key: '세부항목담당자', wk: 'manager' }
+            ], []);
+
+            const expenseCols = useMemo(() => [
+                { label: '세부사업명', key: '세부사업명', wk: 'proj' },
+                { label: '세부항목명', key: '세부항목명', wk: 'item' },
+                { label: '원가비목', key: '원가비목', wk: 'category' },
+                { label: '지출일자', key: '_date', wk: 'date' },
+                { label: '제목', key: '제목', wk: 'title' },
+                { label: '채주', key: '채주', wk: 'payee' },
+                { label: '지출액', key: '_amt', wk: 'amount', isNum: true }
+            ], []);
+
+            const activeCols = useMemo(() => {
+                const cols = activeTab === 'expense' ? expenseCols : detailCols;
+                const tabHidden = hiddenCols[activeTab] || {};
+                return cols.filter(c => !tabHidden[c.wk]);
+            }, [activeTab, hiddenCols, detailCols, expenseCols]);
+
+            const handleSearchChange = (e) => {
+                const val = e.target.value;
+                setSearch(val);
+                startTransition(() => setDeferredSearch(val));
+            };
+
+            const handleSort = (colKey) => {
+                setSortConfig(prev => ({ key: colKey, direction: prev.key === colKey && prev.direction === 'asc' ? 'desc' : 'asc' }));
+            };
+
             const filteredData = useMemo(() => {
                 const source = activeTab === 'expense' ? expenseData : budgetData;
                 let items = source.filter(d => {
-                    const searchMatch = !deferredSearch || Object.values(d).some(v => String(v).toLowerCase().includes(deferredSearch.toLowerCase()));
-                    if (!searchMatch) return false;
+                    const match = !deferredSearch || Object.values(d).some(v => String(v).toLowerCase().includes(deferredSearch.toLowerCase()));
+                    if (!match) return false;
                     for (let colKey in columnFilters) {
                         const allowed = columnFilters[colKey];
                         if (allowed && allowed.length > 0) {
                             let val = (d[colKey] === undefined || d[colKey] === null) ? '' : String(d[colKey]);
-                            if (colKey === '_date') {
-                                val = dateMode === 'month' ? val.substring(0, 7) : val;
-                            }
+                            if (colKey === '_date' && dateMode === 'month') val = val.substring(0, 7);
                             if (!allowed.includes(val)) return false;
                         }
                     }
@@ -454,9 +939,9 @@
                     items.sort((a, b) => {
                         let aVal = a[sortConfig.key];
                         let bVal = b[sortConfig.key];
-                        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-                        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-                        return 0;
+                        if (typeof aVal === 'number' && typeof bVal === 'number') return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+                        aVal = String(aVal || ''); bVal = String(bVal || '');
+                        return sortConfig.direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
                     });
                 }
                 return items;
@@ -475,7 +960,8 @@
                     const sumExclude = rows.reduce((s, r) => s + (Number(r._exclude) || 0), 0);
                     const sumSupp = rows.reduce((s, r) => s + (Number(r['추경']) || 0), 0);
                     result.push({
-                        '세부사업': `${name} 합계`,
+                        _id: `subtotal_${name}_${Math.random()}`,
+                        '세부사업': `${name} 소계`,
                         _a: sumA, _b: sumB, _ab: sumA - sumB, _c: sumC, _ac: sumA - sumC,
                         추경: sumSupp, _exclude: sumExclude,
                         _rate: sumA > 0 ? ((sumA - sumB) / sumA * 100).toFixed(1) : '0.0',
@@ -483,57 +969,56 @@
                     });
                 };
                 filteredData.forEach(row => {
-                    if (row['세부사업'] !== currentGroup) { addTotalRow(currentGroup, groupRows); currentGroup = row['세부사업']; groupRows = []; }
-                    result.push(row); groupRows.push(row);
+                    if (row['세부사업'] !== currentGroup) {
+                        addTotalRow(currentGroup, groupRows);
+                        currentGroup = row['세부사업'];
+                        groupRows = [];
+                    }
+                    result.push(row);
+                    groupRows.push(row);
                 });
                 addTotalRow(currentGroup, groupRows);
                 return result;
             }, [filteredData, activeTab]);
 
             const totals = useMemo(() => {
-                if (activeTab === 'expense') return { expense: filteredData.reduce((acc, cur) => acc + cur._amt, 0) };
+                if (activeTab === 'expense') return { expense: filteredData.reduce((acc, cur) => acc + (cur._amt || 0), 0) };
                 const baseData = filteredData.filter(d => !d._totalType);
                 return {
-                    a: baseData.reduce((acc, cur) => acc + cur._a, 0),
-                    b: baseData.reduce((acc, cur) => acc + cur._b, 0),
-                    ab: baseData.reduce((acc, cur) => acc + cur._ab, 0),
-                    c: baseData.reduce((acc, cur) => acc + cur._c, 0),
-                    ac: baseData.reduce((acc, cur) => acc + cur._ac, 0),
+                    a: baseData.reduce((acc, cur) => acc + (cur._a || 0), 0),
+                    b: baseData.reduce((acc, cur) => acc + (cur._b || 0), 0),
+                    ab: baseData.reduce((acc, cur) => acc + (cur._ab || 0), 0),
+                    c: baseData.reduce((acc, cur) => acc + (cur._c || 0), 0),
+                    ac: baseData.reduce((acc, cur) => acc + (cur._ac || 0), 0),
                     supp: baseData.reduce((acc, cur) => acc + (Number(cur['추경']) || 0), 0),
                     exclude: baseData.reduce((acc, cur) => acc + (Number(cur._exclude) || 0), 0)
                 };
             }, [filteredData, activeTab]);
 
-            const renderFilterMenu = (colKey, data) => {
-                if (activeFilterCol !== colKey) return null;
-                let allValues = [...new Set(data.map(d => (d[colKey] === undefined || d[colKey] === null) ? '' : String(d[colKey])))].sort();
-                if (colKey === '_date') {
-                    if (dateMode === 'month') {
-                        allValues = [...new Set(allValues.map(v => v.substring(0, 7)))].sort();
-                    }
+            const exportExcel = () => {
+                if (activeTab === 'expense') {
+                    if (!expenseData.length) return alert('저장할 데이터가 없습니다.');
+                    const rows = filteredData.map(r => {
+                        const obj = {};
+                        activeCols.forEach(col => { obj[col.label] = col.isNum ? (Number(r[col.key]) || 0) : r[col.key]; });
+                        return obj;
+                    });
+                    const ws = XLSX.utils.json_to_sheet(rows);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "세부지출현황");
+                    XLSX.writeFile(wb, `학교회계_세부지출_${new Date().toISOString().slice(0,10)}.xlsx`);
+                } else {
+                    if (!budgetData.length) return alert('저장할 데이터가 없습니다.');
+                    const rows = displayData.filter(r => !r._totalType).map(r => {
+                        const obj = {};
+                        activeCols.forEach(col => { obj[col.label] = col.isNum ? (Number(r[col.key]) || 0) : r[col.key]; });
+                        return obj;
+                    });
+                    const ws = XLSX.utils.json_to_sheet(rows);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "추경현황");
+                    XLSX.writeFile(wb, `학교회계_추경현황_${new Date().toISOString().slice(0,10)}.xlsx`);
                 }
-                const selected = columnFilters[colKey] || [];
-                return (
-                    <div className="filter-menu" ref={filterRef} onClick={e => e.stopPropagation()}>
-                        {colKey === '_date' && (
-                            <div className="date-mode-toggle">
-                                <button className={dateMode === 'month' ? 'active' : ''} onClick={() => { setDateMode('month'); setColumnFilters(p => ({...p, [colKey]: []})); }}>월별</button>
-                                <button className={dateMode === 'day' ? 'active' : ''} onClick={() => { setDateMode('day'); setColumnFilters(p => ({...p, [colKey]: []})); }}>일별</button>
-                            </div>
-                        )}
-                        <div className="filter-item" onClick={() => setColumnFilters(prev => ({...prev, [colKey]: selected.length === allValues.length ? [] : allValues}))}>
-                            <input type="checkbox" checked={selected.length === allValues.length} readOnly />
-                            <strong>(전체 선택)</strong>
-                        </div>
-                        <hr style={{borderColor: '#475569', margin: '6px 0'}} />
-                        {allValues.map(v => (
-                            <div key={v} className="filter-item" onClick={() => setColumnFilters(prev => ({...prev, [colKey]: prev[colKey]?.includes(v) ? prev[colKey].filter(x => x !== v) : [...(prev[colKey] || []), v]}))}>
-                                <input type="checkbox" checked={selected.includes(v)} readOnly />
-                                <span>{v || '(공백)'}</span>
-                            </div>
-                        ))}
-                    </div>
-                );
             };
 
             const startResize = (e, colKey, isExpense) => {
@@ -541,159 +1026,277 @@
                 const startX = e.pageX;
                 const startWidth = isExpense ? expenseColWidths[colKey] : detailColWidths[colKey];
                 const onMouseMove = (moveE) => {
-                    const newWidth = Math.max(40, startWidth + (moveE.pageX - startX));
-                    if (isExpense) setExpenseColWidths(prev => ({ ...prev, [colKey]: newWidth }));
-                    else setDetailColWidths(prev => ({ ...prev, [colKey]: newWidth }));
+                    const newWidth = Math.max(50, startWidth + (moveE.pageX - startX));
+                    if (isExpense) setExpenseColWidths(p => ({ ...p, [colKey]: newWidth }));
+                    else setDetailColWidths(p => ({ ...p, [colKey]: newWidth }));
                 };
-                const onMouseUp = () => { document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); };
-                document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp);
+                const onMouseUp = () => {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
             };
-
-            const Arrow = () => <span className="path-arrow"> &gt; </span>;
-
-            const detailCols = [
-                {label:'정책사업', key:'정책사업', wk:'policy'}, {label:'단위사업', key:'단위사업', wk:'unit'},
-                {label:'세부사업', key:'세부사업', wk:'project'}, {label:'세부항목', key:'세부항목', wk:'item'},
-                {label:'산출내역', key:'산출내역', wk:'desc'}, {label:'원가통계비목', key:'_costItem', wk:'cost'},
-                {label:'예산현액 (A)', key:'_a', wk:'a', isNum:true}, {label:'원인행위액 (B)', key:'_b', wk:'b', isNum:true},
-                {label:'원인행위잔액 (A-B)', key:'_ab', wk:'ab', isNum:true}, {label:'지출액 (C)', key:'_c', wk:'c', isNum:true},
-                {label:'지출잔액 (A-C)', key:'_ac', wk:'ac', isNum:true}, 
-                {label:'추경', key:'추경', wk:'supplement', isNum:true},
-                {label:'불용율', key:'_rate', wk:'rate', isRate:true},
-                {label:'정산재원', key:'_exclude', wk:'exclude', isNum:true}, {label:'세부항목담당자', key:'세부항목담당자', wk:'manager'}
-            ];
-
-            const expenseCols = [
-                {label:'세부사업명', key:'세부사업명', wk:'proj'}, {label:'세부항목명', key:'세부항목명', wk:'item'},
-                {label:'원가비목', key:'원가비목', wk:'category'}, {label:'지출일자', key:'_date', wk:'date'},
-                {label:'제목', key:'제목', wk:'title'}, {label:'채주', key:'채주', wk:'payee'},
-                {label:'지출액', key:'_amt', wk:'amount', isNum:true}
-            ];
-
-            const activeCols = useMemo(() => {
-                const cols = activeTab === 'expense' ? expenseCols : detailCols;
-                const tabHidden = hiddenCols[activeTab] || {};
-                return cols.filter(c => !tabHidden[c.wk]);
-            }, [activeTab, hiddenCols]);
 
             return (
                 <div className="container">
-                    <header>
-                        <h1>2026 학교회계 통합 대시보드</h1>
+                    {/* 1. Header */}
+                    <header className="app-header animate-fade-in">
+                        <div className="header-left">
+                            <div className="logo-title-group">
+                                <h1>2026 학교회계 통합 대시보드</h1>
+                                <span className="badge-system">v2.5 Pro</span>
+                            </div>
+                        </div>
+                        <div className="header-right">
+                            <button className="header-btn" onClick={exportJSON} title="데이터 백업">
+                                <IconDownload /> <span>데이터 백업</span>
+                            </button>
+                            <label className="header-btn" title="데이터 복원" style={{ cursor: 'pointer' }}>
+                                <IconUpload /> <span>데이터 복원</span>
+                                <input type="file" accept=".json" style={{ display: 'none' }} onChange={importJSON} />
+                            </label>
+                            <button className="theme-toggle-btn" onClick={() => setIsLightMode(!isLightMode)}>
+                                {isLightMode ? <IconMoon /> : <IconSun />} <span>{isLightMode ? '다크' : '라이트'}</span>
+                            </button>
+                        </div>
                     </header>
 
-                    <div className="upload-section">
+                    {/* 2. 4 KPI Summary Cards */}
+                    {(budgetData.length > 0 || expenseData.length > 0) && (
+                        <div className="kpi-grid animate-fade-in">
+                            <div className="kpi-card">
+                                <div className="kpi-icon-wrap primary"><IconDollar /></div>
+                                <div className="kpi-info">
+                                    <span className="kpi-label">총 예산현액 (A)</span>
+                                    <div className="kpi-value">₩ {formatCurrency(stats.totalA)}</div>
+                                    <div className="kpi-sub">
+                                        {stats.totalSupp !== 0 ? (
+                                            <span className={`kpi-badge ${stats.totalSupp > 0 ? 'positive' : 'negative'}`}>
+                                                추경 후 ₩ {formatCurrency(stats.totalA + stats.totalSupp)}
+                                            </span>
+                                        ) : (
+                                            <span className="kpi-badge neutral">총 {stats.totalCount}개 세부사업</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="kpi-card">
+                                <div className="kpi-icon-wrap success"><IconTrending /></div>
+                                <div className="kpi-info">
+                                    <div className="kpi-label-row">
+                                        <span className="kpi-label">원인행위액 (B)</span>
+                                        <span className="kpi-rate-badge">{stats.execRate.toFixed(1)}% 집행</span>
+                                    </div>
+                                    <div className="kpi-value">₩ {formatCurrency(stats.totalB)}</div>
+                                    <div className="kpi-progress-bar">
+                                        <div className="kpi-progress-fill" style={{ width: `${Math.min(100, Math.max(0, stats.execRate))}%` }} />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="kpi-card">
+                                <div className="kpi-icon-wrap info"><IconCheckCircle /></div>
+                                <div className="kpi-info">
+                                    <div className="kpi-label-row">
+                                        <span className="kpi-label">실제 지출액 (C)</span>
+                                        <span className="kpi-rate-badge neutral">원인대비 {stats.disbRate.toFixed(1)}%</span>
+                                    </div>
+                                    <div className="kpi-value">₩ {formatCurrency(stats.totalC)}</div>
+                                    <div className="kpi-sub">출납완료율: {stats.totalA > 0 ? ((stats.totalC / stats.totalA) * 100).toFixed(1) : 0}%</div>
+                                </div>
+                            </div>
+                            <div className="kpi-card">
+                                <div className={`kpi-icon-wrap ${stats.riskCount > 0 ? 'warning' : 'neutral'}`}><IconAlert /></div>
+                                <div className="kpi-info">
+                                    <span className="kpi-label">원인행위잔액 (A-B)</span>
+                                    <div className={`kpi-value ${stats.totalAB < 0 ? 'danger-val' : ''}`}>₩ {formatCurrency(stats.totalAB)}</div>
+                                    <div className="kpi-sub">
+                                        {stats.riskCount > 0 ? (
+                                            <span className="kpi-badge warning">불용주의(70%미만) {stats.riskCount}개</span>
+                                        ) : (
+                                            <span className="kpi-badge success">전 사업 정상 집행 중</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 3. Upload & Toolbar */}
+                    <div className="upload-section animate-fade-in">
                         <div 
-                            className={`upload-box ${budgetData.length ? 'done' : ''} ${dragOverBox === 'budget' ? 'drag-active' : ''}`} 
+                            className={`upload-box ${budgetData.length ? 'done' : ''} ${dragOverBox === 'budget' ? 'drag-active' : ''}`}
                             onClick={() => document.getElementById('budget-file').click()}
                             onDragOver={(e) => { e.preventDefault(); setDragOverBox('budget'); }}
                             onDragLeave={() => setDragOverBox(null)}
                             onDrop={(e) => { e.preventDefault(); setDragOverBox(null); if (e.dataTransfer.files[0]) processBudgetFile(e.dataTransfer.files[0]); }}
                         >
                             <div className="upload-guide">
-                                <strong style={{fontSize:'1.2rem'}}>📂 사업관리카드(현액) 업로드</strong><br/>
-                                <span className="box-sub" style={{fontSize:'0.88rem', opacity:0.9, display:'block', marginTop:'0.5rem', letterSpacing:'-0.02em'}}>
-                                    ① K-에듀파인에서 학교회계 / 사업관리 / 사업관리 카드 / 사업관리 카드(현액) / 정책, 단위 체크 / 조회 / 파일 / 엑셀저장
-                                </span>
+                                <strong>📂 사업관리카드(현액)</strong>
+                                <span className="box-sub-guide">K-에듀파인: 학교회계 &gt; 사업관리 &gt; 사업관리카드(현액) (정책,단위 체크 후 엑셀저장)</span>
                             </div>
-                            <div className="box-sub" style={{fontWeight:700, marginTop:'0.3rem', fontSize:'1.1rem'}}>
-                                {budgetData.length ? `✅ 업로드 완료 (${budgetData.filter(d=>!d._totalType).length}건)` : '클릭 또는 파일 드래그'}
+                            <div className="box-status">
+                                {budgetData.length > 0 ? (
+                                    <span className="status-badge done">✅ {budgetData.filter(d => !d._totalType).length}개 항목 완료</span>
+                                ) : (
+                                    <span className="status-badge ready">클릭 또는 파일 드래그</span>
+                                )}
                             </div>
                             <input type="file" id="budget-file" hidden onChange={e => processBudgetFile(e.target.files[0])} accept=".xlsx, .xls" />
                         </div>
+
                         <div 
-                            className={`upload-box ${expenseData.length ? 'done' : ''} ${dragOverBox === 'expense' ? 'drag-active' : ''}`} 
+                            className={`upload-box ${expenseData.length ? 'done' : ''} ${dragOverBox === 'expense' ? 'drag-active' : ''}`}
                             onClick={() => document.getElementById('expense-file').click()}
                             onDragOver={(e) => { e.preventDefault(); setDragOverBox('expense'); }}
                             onDragLeave={() => setDragOverBox(null)}
                             onDrop={(e) => { e.preventDefault(); setDragOverBox(null); if (e.dataTransfer.files[0]) processExpenseFile(e.dataTransfer.files[0]); }}
                         >
                             <div className="upload-guide">
-                                <strong style={{fontSize:'1.2rem'}}>📂 현금출납부</strong> 업로드<br/>
-                                <span className="box-sub" style={{fontSize:'0.88rem', opacity:0.9, display:'block', marginTop:'0.5rem', letterSpacing:'-0.02em'}}>
-                                    ① K-에듀파인에서 학교회계 / 지출관리 / 지출장부 / 현금출납부 / 기간 (03.01 ~ ) / 전체선택(체크) / 조회 / 파일 / 엑셀저장
-                                </span>
+                                <strong>📂 현금출납부</strong>
+                                <span className="box-sub-guide">K-에듀파인: 학교회계 &gt; 지출관리 &gt; 지출장부 &gt; 현금출납부 (전체선택 후 엑셀저장)</span>
                             </div>
-                            <div className="box-sub" style={{fontWeight:700, marginTop:'0.3rem', fontSize:'1.1rem'}}>
-                                {expenseData.length ? `✅ 업로드 완료 (${expenseData.length}건)` : '클릭 또는 파일 드래그'}
+                            <div className="box-status">
+                                {expenseData.length > 0 ? (
+                                    <span className="status-badge done">✅ {expenseData.length}개 지출건 완료</span>
+                                ) : (
+                                    <span className="status-badge ready">클릭 또는 파일 드래그</span>
+                                )}
                             </div>
                             <input type="file" id="expense-file" hidden onChange={e => processExpenseFile(e.target.files[0])} accept=".xlsx, .xls" />
                         </div>
 
                         <div className="header-tools">
-                            <button className="toggle-btn" onClick={() => setShowManager(!showManager)}>⚙️ 컬럼 설정</button>
-                            <button className="toggle-btn" onClick={() => setIsLightMode(!isLightMode)}>{isLightMode ? '🌙 다크 모드' : '☀️ 화이트 모드'}</button>
-                            <input type="text" placeholder="🔍 검색..." value={search} onChange={handleSearchChange} style={{ opacity: isPending ? 0.7 : 1 }} />
-                            <button className="toggle-btn" 
-                                onClick={exportSupplementExcel} 
-                                disabled={activeTab !== 'supplement'}
-                                style={{
-                                    background: activeTab === 'supplement' ? 'var(--success)' : 'rgba(255,255,255,0.05)', 
-                                    color: activeTab === 'supplement' ? 'white' : 'var(--text-muted)', 
-                                    border: '1px solid var(--border)',
-                                    opacity: activeTab === 'supplement' ? 1 : 0.5
-                                }}
-                            >
-                                📥 추경 엑셀 저장
-                            </button>
-                            <button className="toggle-btn" onClick={() => window.print()} style={{background: 'var(--primary)', color: 'white', border: 'none'}}>🖨️ 인쇄</button>
-                            {(budgetData.length > 0 || expenseData.length > 0) && (
-                                <button className="toggle-btn" 
-                                    onClick={() => {
-                                        if (confirm("저장된 데이터를 모두 삭제하고 초기화하시겠습니까?")) {
-                                            setBudgetData([]);
-                                            setExpenseData([]);
-                                        }
-                                    }} 
-                                    style={{background: 'var(--danger)', color: 'white', border: 'none'}}
-                                >
-                                    🗑️ 데이터 초기화
+                            <div className="search-box-wrap">
+                                <span className="search-icon"><IconSearch /></span>
+                                <input type="text" className="search-input" placeholder="사업명, 항목, 비목 검색..." value={search} onChange={handleSearchChange} />
+                            </div>
+                            <div className="tool-row buttons">
+                                <button className="tool-btn manager-toggle" onClick={() => setShowManager(!showManager)}>
+                                    <IconSettings /> <span>컬럼 설정</span>
                                 </button>
-                            )}
+                                <button className={`tool-btn export-btn ${activeTab === 'supplement' ? 'active' : ''}`} onClick={exportExcel}>
+                                    <IconSave /> <span>엑셀 저장</span>
+                                </button>
+                                <button className="tool-btn print-btn" onClick={() => window.print()}>
+                                    <IconPrinter /> <span>인쇄</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                        
-                        {showManager && (
-                            <div className="col-manager-modal" ref={managerRef}>
-                                {(activeTab === 'expense' ? expenseCols : detailCols).map(col => (
-                                    <label key={col.wk}>
-                                        <input type="checkbox" 
-                                            checked={!(hiddenCols[activeTab] || {})[col.wk]} 
-                                            onChange={() => setHiddenCols(prev => ({
-                                                ...prev,
-                                                [activeTab]: { ...prev[activeTab], [col.wk]: !prev[activeTab][col.wk] }
-                                            }))} 
-                                        />
-                                        {col.label}
-                                    </label>
-                                ))}
-                            </div>
-                        )}
 
-                    <div className="tab-area">
+                    {/* 4. Tab Navigation */}
+                    <div className="tab-area animate-fade-in">
                         <div className="tabs">
-                            {['detail', 'supplement', 'expense'].map(t => (
-                                <div key={t} className={`tab ${activeTab === t ? 'active' : ''}`} onClick={() => { setActiveTab(t); setColumnFilters({}); }}>
-                                    {t === 'detail' ? '1. 세부사업' : t === 'supplement' ? '2. 추경' : '3. 세부지출현황'}
+                            {[
+                                { id: 'detail', label: '1. 세부사업 현황' },
+                                { id: 'supplement', label: '2. 추경 시뮬레이터' },
+                                { id: 'expense', label: '3. 세부지출현황' }
+                            ].map(t => (
+                                <div key={t.id} className={`tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => { setActiveTab(t.id); setColumnFilters({}); }}>
+                                    {t.label}
                                 </div>
                             ))}
                         </div>
+                        <div className="tab-status-count">
+                            조회: <strong>{filteredData.filter(d => !d._totalType).length}</strong> 건
+                        </div>
                     </div>
 
-                    <div className="content-card">
-                        <div className="table-wrapper" key={activeTab}>
+                    {/* 5. Supplement Toolbar */}
+                    {activeTab === 'supplement' && (
+                        <div className="supplement-toolbar animate-fade-in">
+                            <div className="toolbar-left">
+                                <span className="toolbar-title">⚡ 빠른 추경 도구</span>
+                                <button className="supp-tool-btn" onClick={reduceAllBalance} title="원인행위잔액 전액 감액">
+                                    <span className="icon-neg"><IconMinusCircle /></span> <span>원인행위잔액 전액 감액</span>
+                                </button>
+                                <button className="supp-tool-btn" onClick={resetSupplement} title="추경 초기화">
+                                    <IconRotateCcw /> <span>추경 초기화</span>
+                                </button>
+                            </div>
+                            <div className="toolbar-right">
+                                <button className="supp-history-btn" onClick={() => {
+                                    if (historyIndex > 0) {
+                                        setBudgetData(JSON.parse(JSON.stringify(history[historyIndex - 1])));
+                                        setHistoryIndex(historyIndex - 1);
+                                    }
+                                }} disabled={historyIndex <= 0} title="되돌리기 (Ctrl+Z)">
+                                    <IconUndo /> <span>되돌리기</span>
+                                </button>
+                                <button className="supp-history-btn" onClick={() => {
+                                    if (historyIndex < history.length - 1) {
+                                        setBudgetData(JSON.parse(JSON.stringify(history[historyIndex + 1])));
+                                        setHistoryIndex(historyIndex + 1);
+                                    }
+                                }} disabled={historyIndex >= history.length - 1} title="다시실행 (Ctrl+Y)">
+                                    <IconRedo /> <span>다시실행</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 6. Content Table */}
+                    <div className="content-card animate-fade-in">
+                        <div className="table-wrapper">
                             <table>
                                 <thead className="excel-header">
                                     <tr>
                                         {activeCols.map(col => (
-                                            <th key={col.key} style={{width: (activeTab === 'expense' ? expenseColWidths[col.wk] : detailColWidths[col.wk])+'px'}} onClick={() => setSortConfig({key: col.key, direction: sortConfig.key === col.key && sortConfig.direction === 'asc' ? 'desc' : 'asc'})}>
+                                            <th 
+                                                key={col.key} 
+                                                style={{ width: (activeTab === 'expense' ? expenseColWidths[col.wk] : detailColWidths[col.wk]) + 'px' }} 
+                                                onClick={() => handleSort(col.key)}
+                                            >
                                                 <div className="header-content">
-                                                    <span className={`filter-btn ${columnFilters[col.key]?.length > 0 ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveFilterCol(activeFilterCol === col.key ? null : col.key); }}>≣</span>
-                                                    <span>{col.label}</span>
-                                                    <span className="sort-icon">{sortConfig.key===col.key?(sortConfig.direction==='asc'?'▲':'▼'):'▼'}</span>
+                                                    <span className={`filter-btn ${columnFilters[col.key]?.length > 0 ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveFilterCol(activeFilterCol === col.key ? null : col.key); }}>
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                                                    </span>
+                                                    <span className="header-label">{col.label}</span>
+                                                    <span style={{ opacity: 0.4, fontSize: '9px' }}>{sortConfig.key === col.key ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '▼'}</span>
                                                 </div>
-                                                <div className="resizer" onMouseDown={e => startResize(e, col.wk, activeTab === 'expense')}></div>
-                                                {renderFilterMenu(col.key, activeTab === 'expense' ? expenseData : budgetData)}
+                                                <div className="resizer" onMouseDown={e => startResize(e, col.wk, activeTab === 'expense')} />
+                                                
+                                                {/* Filter Popover */}
+                                                {activeFilterCol === col.key && (
+                                                    <div className="filter-menu" ref={filterRef} onClick={e => e.stopPropagation()}>
+                                                        {col.key === '_date' && (
+                                                            <div className="date-mode-toggle">
+                                                                <button className={dateMode === 'month' ? 'active' : ''} onClick={() => { setDateMode('month'); setColumnFilters(p => ({ ...p, [col.key]: [] })); }}>월별</button>
+                                                                <button className={dateMode === 'day' ? 'active' : ''} onClick={() => { setDateMode('day'); setColumnFilters(p => ({ ...p, [col.key]: [] })); }}>일별</button>
+                                                            </div>
+                                                        )}
+                                                        {(() => {
+                                                            const src = activeTab === 'expense' ? expenseData : budgetData;
+                                                            let vals = [...new Set(src.filter(d => !d._totalType).map(d => {
+                                                                let v = (d[col.key] === undefined || d[col.key] === null) ? '' : String(d[col.key]);
+                                                                if (col.key === '_date' && dateMode === 'month') v = v.substring(0, 7);
+                                                                return v;
+                                                            }))].sort();
+                                                            const selected = columnFilters[col.key] || [];
+                                                            return (
+                                                                <>
+                                                                    <div className="filter-item header-item" onClick={() => setColumnFilters(p => ({ ...p, [col.key]: selected.length === vals.length ? [] : vals }))}>
+                                                                        <input type="checkbox" checked={selected.length === vals.length} readOnly />
+                                                                        <strong>(전체 선택)</strong>
+                                                                    </div>
+                                                                    <hr className="filter-divider" />
+                                                                    <div className="filter-scroll-list">
+                                                                        {vals.map(v => (
+                                                                            <div key={v} className="filter-item" onClick={() => setColumnFilters(p => ({
+                                                                                ...p,
+                                                                                [col.key]: p[col.key]?.includes(v) ? p[col.key].filter(x => x !== v) : [...(p[col.key] || []), v]
+                                                                            }))}>
+                                                                                <input type="checkbox" checked={selected.includes(v)} readOnly />
+                                                                                <span>{v === '' ? '(공백)' : v}</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                )}
                                             </th>
                                         ))}
                                     </tr>
@@ -704,22 +1307,24 @@
                                             key={r._id || i} 
                                             row={r} 
                                             activeCols={activeCols} 
-                                            activeTab={activeTab}
-                                            onUpdateBudget={(key, val) => {
-                                                setBudgetData(prev => prev.map(row => row._id === r._id ? { ...row, [key]: val } : row));
-                                            }}
+                                            activeTab={activeTab} 
+                                            onUpdateBudget={updateBudgetValue} 
                                         />
                                     ))}
+
+                                    {/* Grand Total Row */}
                                     <tr className="grand-total">
                                         {activeTab === 'expense' ? (
                                             (() => {
-                                                const labelSpan = activeCols.findIndex(c => c.wk === 'amount');
+                                                const amtIdx = activeCols.findIndex(c => c.wk === 'amount');
+                                                const labelSpan = amtIdx > 0 ? amtIdx : 1;
+                                                const afterAmtCols = activeCols.slice(amtIdx);
                                                 return (
                                                     <>
-                                                        <td colSpan={labelSpan > 0 ? labelSpan : 1} className="center-cell">총 합 계</td>
-                                                        {activeCols.filter((_, idx) => idx >= labelSpan).map(col => (
-                                                            <td key={col.key} className={col.isNum ? 'num-cell' : 'center-cell'}>
-                                                                {col.key === '_amt' ? new Intl.NumberFormat().format(totals.expense) : ''}
+                                                        <td colSpan={labelSpan} className="center-cell">총 합 계</td>
+                                                        {afterAmtCols.map(col => (
+                                                            <td key={col.key} className={col.key === '_amt' ? 'num-cell' : 'center-cell'}>
+                                                                {col.key === '_amt' ? formatCurrency(totals.expense) : ''}
                                                             </td>
                                                         ))}
                                                     </>
@@ -736,14 +1341,15 @@
                                                         {afterNumCols.map(col => {
                                                             let val = '';
                                                             let className = col.isNum ? 'num-cell' : col.isRate ? 'percent-cell' : 'center-cell';
-                                                            if (col.key === '_a') val = new Intl.NumberFormat().format(totals.a);
-                                                            else if (col.key === '_b') val = new Intl.NumberFormat().format(totals.b);
-                                                            else if (col.key === '_ab') val = new Intl.NumberFormat().format(totals.ab);
-                                                            else if (col.key === '_c') val = new Intl.NumberFormat().format(totals.c);
-                                                            else if (col.key === '_ac') val = new Intl.NumberFormat().format(totals.ac);
-                                                            else if (col.key === '추경') val = new Intl.NumberFormat().format(totals.supp);
-                                                            else if (col.key === '_exclude') val = new Intl.NumberFormat().format(totals.exclude);
-                                                            else if (col.key === '_rate') val = (totals.a > 0 ? ((totals.a - totals.b)/totals.a*100).toFixed(1) : '0.0') + '%';
+                                                            if (col.key === '_a') val = formatCurrency(totals.a);
+                                                            else if (col.key === '_b') val = formatCurrency(totals.b);
+                                                            else if (col.key === '_ab') val = formatCurrency(totals.ab);
+                                                            else if (col.key === '_c') val = formatCurrency(totals.c);
+                                                            else if (col.key === '_ac') val = formatCurrency(totals.ac);
+                                                            else if (col.key === '추경') val = formatCurrency(totals.supp);
+                                                            else if (col.key === '_exclude') val = formatCurrency(totals.exclude);
+                                                            else if (col.key === '_rate') val = totals.a > 0 ? ((totals.a - totals.b) / totals.a * 100).toFixed(1) + '%' : '0.0%';
+                                                            else if (col.key === '_note') val = totals.supp !== 0 ? `순증감: ₩ ${formatCurrency(totals.supp)}` : '';
                                                             
                                                             const isNeg = (col.key === '_a' && totals.a < 0) || (col.key === '_b' && totals.b < 0) || 
                                                                           (col.key === '_ab' && totals.ab < 0) || (col.key === '_c' && totals.c < 0) || 
@@ -761,6 +1367,43 @@
                         </div>
                     </div>
 
+                    {/* Column Manager Modal */}
+                    {showManager && (
+                        <div className="col-manager-backdrop" onClick={() => setShowManager(false)}>
+                            <div className="col-manager-modal" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3>⚙️ 컬럼 표시/숨김 설정 ({activeTab === 'expense' ? '세부지출' : activeTab === 'supplement' ? '추경' : '세부사업'})</h3>
+                                    <button className="close-btn" onClick={() => setShowManager(false)}>✕</button>
+                                </div>
+                                <div className="modal-body">
+                                    <p className="modal-desc">체크된 컬럼만 화면 테이블에 표시됩니다.</p>
+                                    <div className="col-grid">
+                                        {(activeTab === 'expense' ? expenseCols : detailCols).map(col => (
+                                            <label key={col.wk} className={`col-checkbox-label ${!(hiddenCols[activeTab] || {})[col.wk] ? 'checked' : ''}`}>
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={!(hiddenCols[activeTab] || {})[col.wk]} 
+                                                    onChange={() => setHiddenCols(p => ({
+                                                        ...p,
+                                                        [activeTab]: { ...p[activeTab], [col.wk]: !p[activeTab]?.[col.wk] }
+                                                    }))} 
+                                                />
+                                                <span>{col.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="btn-secondary" onClick={() => {
+                                        if (activeTab === 'detail') setHiddenCols(p => ({ ...p, detail: { policy: true, unit: true, manager: true, supplement: true, note: true } }));
+                                        else if (activeTab === 'supplement') setHiddenCols(p => ({ ...p, supplement: { policy: true, unit: true, manager: true, rate: true } }));
+                                        else setHiddenCols(p => ({ ...p, expense: {} }));
+                                    }}>기본값 복원</button>
+                                    <button className="btn-primary" onClick={() => setShowManager(false)}>완료</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
