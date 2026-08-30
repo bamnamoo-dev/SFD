@@ -21,8 +21,12 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     base_path = os.path.join(sys._MEIPASS, 'dist')
     exe_dir = os.path.dirname(sys.executable)
 else:
-    base_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dist')
     exe_dir = os.path.dirname(os.path.abspath(__file__))
+    dist_dir = os.path.join(exe_dir, 'dist')
+    if os.path.exists(os.path.join(dist_dir, 'index.html')):
+        base_path = dist_dir
+    else:
+        base_path = exe_dir
 
 DATA_FILE = os.path.join(exe_dir, 'dashboard_data.json')
 
@@ -56,6 +60,14 @@ class SpaHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 self.wfile.write(b'{"budgetData": [], "expenseData": []}')
             return
+        elif self.path in ['/', '/index.html']:
+            if not os.path.exists(os.path.join(base_path, 'index.html')) and os.path.exists(os.path.join(exe_dir, 'viewer.html')):
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.end_headers()
+                with open(os.path.join(exe_dir, 'viewer.html'), 'rb') as f:
+                    self.wfile.write(f.read())
+                return
         return super().do_GET()
 
     def do_POST(self):
